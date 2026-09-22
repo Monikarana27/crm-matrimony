@@ -1,0 +1,1359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  SALES
+  SALES_TL
+  SALES_MANAGER
+
+  PROFILE_CREATOR
+  SERVICE
+  SERVICE_TL
+  SERVICE_MANAGER
+  HR
+  SYSTEM
+}
+
+enum Department {
+  SALES_EMP
+  PROFILE_EMP
+  SERVICE_EMP
+  HR_EMP
+}
+
+model User {
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  phone      String?
+  password   String
+  department Department?
+  role       Role        @default(SALES)
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  managerId     String?
+  manager       User?   @relation("UserHierarchy", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports User[]  @relation("UserHierarchy")
+
+  activityLogs                  ActivityLog[]                 @relation("ActorLogs")
+  assignedProfiles              Profile[]                     @relation("AssignedProfiles")
+  assignedLeads                 Lead[]                        @relation("AssignedLeads")
+  assignmentHistoryFrom         LeadAssignmentHistory[]       @relation("AssignmentHistoryFrom")
+  assignmentHistoryTo           LeadAssignmentHistory[]       @relation("AssignmentHistoryTo")
+  assignmentHistoryChangedBy    LeadAssignmentHistory[]       @relation("AssignmentHistoryChangedBy")
+  profileAssignmentsAsEmployee  ProfileAssignmentHistory[]    @relation("ProfileAssignmentEmployee")
+  profileAssignmentsAssignedBy  ProfileAssignmentHistory[]    @relation("ProfileAssignmentAssignedBy")
+  assignedMeetings              Meeting[]                     @relation("AssignedMeetings")
+  salesTargets                  SalesTarget[]
+  leadRemarks                   LeadRemark[]
+  subscriptionComments           SubscriptionComment[]
+  achievements                  Achievement[]
+  attendance                    Attendance[]
+  leaveRequests                 LeaveRequest[]
+  performanceReviews            PerformanceReview[]
+  payroll                       Payroll[]
+  loginEvents                   LoginEvent[]
+  workspaceMessages             WorkspaceMessage[]            @relation("WorkspaceMessageAuthor")
+  mentionsReceived              WorkspaceMention[]            @relation("MentionedUser")
+  notificationsReceived         Notification[]                @relation("NotificationRecipient")
+  notificationsSent             Notification[]                @relation("NotificationActor")
+  callLogsCreated               CallLog[]                     @relation("CallLogCreatedBy")
+  sentProfileQueues             ProfileQueue[]                @relation("ProfileQueueSentBy")
+  profileSharesSent             ProfileShare[]
+  welcomeCalls                  WelcomeCall[]
+  welcomeCallLogsCreated        WelcomeCallLog[]              @relation("WelcomeCallLogCreatedBy")
+  employeeDocuments             EmployeeDocument[]
+  profileShareComments          ProfileShareComment[]
+  profileShareFeedback          ProfileShareFeedbackHistory[]
+  profileRemarks                ProfileRemark[]
+  paymentOffersCreated          PaymentOffer[]
+  extraPermissions              EmployeePermission[]          @relation("EmployeePermissionGrants")
+  extraPermissionsGiven         EmployeePermission[]          @relation("EmployeePermissionGrantedBy")
+  assignmentAuditLogsAsEmployee ProfileAssignmentAuditLog[]   @relation("ProfileAssignmentAuditEmployee")
+  assignmentAuditLogsUpdatedBy  ProfileAssignmentAuditLog[]   @relation("ProfileAssignmentAuditUpdatedBy")
+
+  @@index([role])
+  @@index([email])
+  @@index([managerId])
+  @@map("users")
+}
+
+//   achievements Achievement[]
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month       Int
+  year        Int
+  amount      Float
+  note        String?
+  paymentId   String?  @unique
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, month, year])
+  @@map("achievements")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  actor User @relation("ActorLogs", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+enum ProfileStatus {
+  UNASSIGNED
+  ASSIGNED
+  REASSIGNED
+  ON_HOLD
+  EXPIRED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Profile {
+  id          String @id @default(cuid())
+  profileCode String @unique
+
+  // AI: text embedding for semantic matching/search (nomic-embed-text via Ollama), managed via raw SQL — not migrated by Prisma
+  embedding Unsupported("vector(768)")?
+
+  // Source
+  source     String?
+  sourceInfo String?
+
+  // Contact
+  email         String?
+  altEmail      String?
+  phone         String
+  altPhone      String?
+  contactPerson String?
+  creatingFor   String?
+
+  // Basic Info
+  name            String
+  gender          Gender
+  dob             DateTime?
+  maritalStatus   String?
+  height          String?
+  weightKg        Float?
+  motherTongueOld String?          @map("motherTongue")
+  motherTongueId  String?
+  motherTongueRef MotherTongueRef? @relation(fields: [motherTongueId], references: [id], onDelete: SetNull)
+  bodyType        String?
+  complexion      String?
+  bloodGroup      String?
+  healthStatus    String?
+  nativePlace     String?
+  aboutYourself   String?          @db.Text
+
+  // Location
+  country       String?
+  state         String?
+  city          String?
+  citizenship   String?
+  countryGrewUp String?
+  visaStatus    String?
+
+  // Religion & Horoscope
+  religionOld  String?   @map("religion")
+  religionId   String?
+  religion     Religion? @relation(fields: [religionId], references: [id], onDelete: SetNull)
+  casteOld     String?   @map("caste")
+  casteId      String?
+  caste        Caste?    @relation(fields: [casteId], references: [id], onDelete: SetNull)
+  subCaste     String?
+  gotraOld     String?   @map("gotra")
+  gotraId      String?
+  gotra        Gotra?    @relation(fields: [gotraId], references: [id], onDelete: SetNull)
+  timeOfBirth  String?
+  placeOfBirth String?
+  manglik      String?
+  rashi        String?
+  nakshatra    String?
+
+  // Education & Career
+  highestQualification String?
+  educationField       String?
+  institute            String?
+  workLocation         String?
+  workingWith          String?
+  profession           String?
+  businessName         String?
+  designation          String?
+  annualIncome         String?
+  annualIncomeCurrency String?
+
+  // Lifestyle
+  diet     String?
+  drinking String?
+  smoking  String?
+
+  // Family
+  fatherOccupation   String?
+  motherOccupation   String?
+  brothers           Int?    @default(0)
+  brothersMarried    Int?    @default(0)
+  sisters            Int?    @default(0)
+  sistersMarried     Int?    @default(0)
+  familyType         String?
+  affluence          String?
+  familyValues       String?
+  familyBio          String? @db.Text
+  familyAnnualIncome         String?
+  familyAnnualIncomeCurrency String?
+  familyNetWorth             String?
+  familyNetWorthCurrency     String?
+
+  // Meeting
+  meetings         Meeting[] @relation("MeetingProfileOne")
+  meetingsAsSecond Meeting[] @relation("MeetingProfileTwo")
+
+  profileShares ProfileShare[]
+
+  photoUrl String?
+
+  // Status & assignment
+  status            ProfileStatus @default(UNASSIGNED)
+  assignedToId      String?
+  assignedTo        User?         @relation("AssignedProfiles", fields: [assignedToId], references: [id])
+  assignedAt        DateTime?
+  convertedFromLead Lead?
+
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
+
+  partnerPreference PartnerPreference?
+  subscriptions     Subscription[]
+  assignmentHistory ProfileAssignmentHistory[]
+  callLogs          CallLog[]
+  queueEntry        ProfileQueue?
+  documents         ProfileDocument[]
+  paymentOffers     PaymentOffer[]
+
+  approvalStatus     ProfileApprovalStatus       @default(PENDING_APPROVAL)
+  approvalNotes      String?                     @db.Text
+  welcomeCalls       WelcomeCall[]
+  remarks            ProfileRemark[]
+  assignmentAuditLog ProfileAssignmentAuditLog[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([phone])
+  @@index([profileCode])
+  @@index([religionId])
+  @@index([casteId])
+  @@index([gotraId])
+  @@index([deletedAt])
+  @@index([motherTongueId])
+  @@map("profiles")
+}
+
+model PartnerPreference {
+  id        String  @id @default(cuid())
+  profileId String  @unique
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  minAge    Int?
+  maxAge    Int?
+  minHeight String?
+  maxHeight String?
+
+  // Legacy single-value fields (kept for existing data, no longer written to by the UI)
+  maritalStatus   String?
+  motherTongueOld String?          @map("motherTongue")
+  motherTongueId  String?
+  motherTongueRef MotherTongueRef? @relation(fields: [motherTongueId], references: [id], onDelete: SetNull)
+  religionOld     String?          @map("religion")
+  religionId      String?
+  religion        Religion?        @relation(fields: [religionId], references: [id], onDelete: SetNull)
+  casteOld        String?          @map("caste")
+  casteId         String?
+  caste           Caste?           @relation(fields: [casteId], references: [id], onDelete: SetNull)
+  manglikStatus   String?
+  hasChildrenOk   String?
+
+  country String?
+  state   String?
+  city    String?
+
+  qualification String?
+  workingWith   String?
+  profession    String?
+  annualIncome  String?
+
+  diet     String?
+  drinking String?
+  smoking  String?
+
+  // New multi-select fields (arrays) — used by the searchable multi-select UI
+  maritalStatusMulti  String[] @default([])
+  motherTongueIds     String[] @default([])
+  religionIds         String[] @default([])
+  casteIds            String[] @default([])
+  manglikStatusMulti  String[] @default([])
+  hasChildrenOkMulti  String[] @default([])
+
+  countryMulti String[] @default([])
+  stateMulti   String[] @default([])
+  cityMulti    String[] @default([])
+
+  qualificationMulti String[] @default([])
+  professionMulti    String[] @default([])
+
+  annualIncomeCurrency String?
+  annualIncomeRanges   String[] @default([])
+
+  dietMulti     String[] @default([])
+  drinkingMulti String[] @default([])
+  smokingMulti  String[] @default([])
+
+  aboutDesiredPartner String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([religionId])
+  @@index([casteId])
+  @@index([motherTongueId])
+  @@map("partner_preferences")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  PENDING
+  CLOSED
+  NOT_INTERESTED
+  INTERESTED
+  MEMBER_BUSY
+  FOLLOW_UP
+  NOT_REACHABLE
+  OPT_WITH_COMPETITORS
+  NO_NOT_EXIST
+  WRONG_NUMBER_FAKE_LEAD
+  PTP
+  PRODUCT_PITCH
+}
+
+model Lead {
+  id           String     @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  source       String?
+  status       LeadStatus @default(NEW)
+  notes        String?    @db.Text
+  gender       Gender?
+  followUpDate DateTime?
+
+  assignedToId       String?
+  assignedTo         User?                   @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  assignedAt         DateTime?
+  assignmentHistory  LeadAssignmentHistory[]
+  convertedProfileId String?                 @unique
+  convertedProfile   Profile?                @relation(fields: [convertedProfileId], references: [id])
+
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  deletedById String?
+
+  remarks      LeadRemark[]
+  profileQueue ProfileQueue?
+  welcomeCalls WelcomeCall[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([phone])
+  @@index([deletedAt])
+  @@map("leads")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  HOLD
+  EXPIRED
+  STOPPED
+  PENDING
+}
+
+model Plan {
+  id           String  @id @default(cuid())
+  name         String
+  price        Float
+  currency     String  @default("INR")
+  durationDays Int
+  description  String?
+  active       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+  paymentOffers PaymentOffer[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id String @id @default(cuid())
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  status    SubscriptionStatus @default(ACTIVE)
+  startDate DateTime           @default(now())
+  endDate   DateTime?
+
+  serviceStage ServiceStage @default(ACTIVE)
+
+  isPaused        Boolean   @default(false)
+  pausedAt        DateTime?
+  pauseDays       Int?
+  pausedById      String?
+  pauseReason     String?
+  totalPausedDays Int       @default(0)
+  holdReason   HoldReason?
+  holdAt       DateTime?
+  followUpDate DateTime?
+
+  createdById    String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  payments       Payment[]
+  profileShares  ProfileShare[]
+  successStories SuccessStory[]
+  stageHistory   ServiceStageHistory[]
+  comments       SubscriptionComment[]
+
+  @@index([status])
+  @@index([profileId])
+  @@map("subscriptions")
+}
+
+model ServiceStageHistory {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  stage          ServiceStage
+  remarks        String?      @db.Text
+  performedBy    String?
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId])
+  @@map("service_stage_history")
+}
+
+model SubscriptionComment {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  actorId        String
+  actor          User         @relation(fields: [actorId], references: [id])
+  remark         String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId])
+  @@map("subscription_comments")
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  PAYU
+  PAYPAL
+  OTHER
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  subscriptionId String
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amount         Float
+  method         PaymentMethod @default(OTHER)
+  status         PaymentStatus @default(PENDING)
+
+  transactionId  String?
+  paymentLinkUrl String?
+  notes          String? @db.Text
+
+  paidAt       DateTime?
+  paymentOffer PaymentOffer?
+
+  createdById String?
+  soldById    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  currency    String   @default("INR")
+
+  @@index([status])
+  @@index([subscriptionId])
+  @@map("payments")
+}
+
+enum MeetingType {
+  FACE_TO_FACE
+  TELE
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+model Meeting {
+  id String @id @default(cuid())
+
+  profileId String
+  profile   Profile @relation("MeetingProfileOne", fields: [profileId], references: [id], onDelete: Cascade)
+
+  profileTwoId String?
+  profileTwo   Profile? @relation("MeetingProfileTwo", fields: [profileTwoId], references: [id])
+
+  type        MeetingType    @default(TELE)
+  status      MeetingStatus  @default(SCHEDULED)
+  scheduledAt DateTime
+  notes       String?        @db.Text
+  outcome     MeetingOutcome @default(PENDING)
+  reminderAt  DateTime?
+
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedMeetings", fields: [assignedToId], references: [id])
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([profileId])
+  @@map("meetings")
+}
+
+enum CallOutcome {
+  CONNECTED
+  NOT_ANSWERED
+  BUSY
+  INVALID_NUMBER
+  FOLLOW_UP_NEEDED
+  WRONG_NUMBER
+  INTERESTED
+  CALLBACK
+}
+
+model CallLog {
+  id String @id @default(cuid())
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  calledAt DateTime    @default(now())
+  outcome  CallOutcome @default(CONNECTED)
+  notes    String?     @db.Text
+
+  durationSeconds Int?
+  nextFollowUpAt  DateTime?
+  recordingUrl    String?
+  qualityScore    Int?
+
+  createdById String?
+  createdBy   User?    @relation("CallLogCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([profileId])
+  @@index([createdById])
+  @@map("call_logs")
+}
+
+model SalesTarget {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  month        Int
+  year         Int
+  targetAmount Float
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, month, year])
+  @@map("sales_targets")
+}
+
+// ---------------------------------------------------------
+// Stage 0: Role Model + Permission Matrix Foundation
+// ---------------------------------------------------------
+enum PermissionAction {
+  VIEW
+  CREATE
+  EDIT
+  APPROVE
+  ASSIGN
+  FULL
+}
+
+model Permission {
+  id     String           @id @default(cuid())
+  module String
+  action PermissionAction
+
+  roles          RolePermission[]
+  employeeGrants EmployeePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_permissions")
+}
+
+model EmployeePermission {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation("EmployeePermissionGrants", fields: [userId], references: [id], onDelete: Cascade)
+
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  note String?
+
+  grantedById String?
+  grantedBy   User?    @relation("EmployeePermissionGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+  grantedAt   DateTime @default(now())
+
+  @@unique([userId, permissionId])
+  @@index([userId])
+  @@map("employee_permissions")
+}
+
+enum LeadCallOutcome {
+  INTERESTED
+  FOLLOW_UP
+  NOT_INTERESTED
+  DNP
+}
+
+model LeadRemark {
+  id        String          @id @default(cuid())
+  leadId    String
+  lead      Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User            @relation(fields: [actorId], references: [id])
+  outcome   LeadCallOutcome
+  status    LeadStatus?
+  remark    String?         @db.Text
+  followUpDate DateTime?
+  createdAt DateTime        @default(now())
+
+  @@index([leadId])
+  @@map("lead_remarks")
+}
+
+enum ProfileQueueStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model ProfileQueue {
+  id               String             @id @default(cuid())
+  leadId           String             @unique
+  lead             Lead               @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status           ProfileQueueStatus @default(PENDING)
+  createdProfileId String?            @unique
+  createdProfile   Profile?           @relation(fields: [createdProfileId], references: [id])
+  sentToQueueAt    DateTime           @default(now())
+  completedAt      DateTime?
+  sentById         String?
+  sentBy           User?              @relation("ProfileQueueSentBy", fields: [sentById], references: [id])
+
+  @@index([status])
+  @@map("profile_queue")
+}
+
+enum DocumentType {
+  PHOTO
+  ID_PROOF
+  OTHER
+}
+
+model ProfileDocument {
+  id         String       @id @default(cuid())
+  profileId  String
+  profile    Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url        String
+  type       DocumentType
+  order      Int          @default(0)
+  uploadedAt DateTime     @default(now())
+
+  @@index([profileId])
+  @@map("profile_documents")
+}
+
+model EmployeeDocument {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url        String
+  uploadedAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("employee_documents")
+}
+
+enum ProfileApprovalStatus {
+  PENDING_APPROVAL
+  APPROVED
+  NEEDS_CHANGES
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model LoginEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("login_events")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  ON_LEAVE
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime
+  status     AttendanceStatus @default(PRESENT)
+  checkIn    DateTime?
+  checkOut   DateTime?
+  breakStart DateTime?
+  breakEnd   DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@unique([userId, date])
+  @@map("attendance")
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LeaveRequest {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate DateTime
+  endDate   DateTime
+  reason    String?     @db.Text
+  status    LeaveStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+
+  @@map("leave_requests")
+}
+
+model JobOpening {
+  id          String      @id @default(cuid())
+  title       String
+  department  Department?
+  description String?     @db.Text
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  interviews  Interview[]
+
+  @@map("job_openings")
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  REJECTED
+  HIRED
+}
+
+model Interview {
+  id             String          @id @default(cuid())
+  jobOpeningId   String
+  jobOpening     JobOpening      @relation(fields: [jobOpeningId], references: [id], onDelete: Cascade)
+  candidateName  String
+  candidatePhone String?
+  scheduledAt    DateTime
+  status         InterviewStatus @default(SCHEDULED)
+  notes          String?         @db.Text
+  createdAt      DateTime        @default(now())
+
+  @@map("interviews")
+}
+
+model PerformanceReview {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedById String?
+  rating       Int
+  comments     String?  @db.Text
+  reviewDate   DateTime @default(now())
+
+  @@map("performance_reviews")
+}
+
+model Payroll {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month      Int
+  year       Int
+  baseSalary Float
+  incentive  Float     @default(0)
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, month, year])
+  @@map("payroll")
+}
+
+enum WorkspaceAttachmentType {
+  LEAD
+  PROFILE
+  MEETING
+  PAYMENT
+  SUBSCRIPTION
+}
+
+model WorkspaceMessage {
+  id          String             @id @default(cuid())
+  authorId    String
+  author      User               @relation("WorkspaceMessageAuthor", fields: [authorId], references: [id])
+  content     String             @db.Text
+  parentId    String?
+  parent      WorkspaceMessage?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     WorkspaceMessage[] @relation("Replies")
+  isImportant Boolean            @default(false)
+  pinnedAt    DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  mentions      WorkspaceMention[]
+  attachments   WorkspaceAttachment[]
+  notifications Notification[]
+
+  @@index([parentId])
+  @@index([isImportant])
+  @@map("workspace_messages")
+}
+
+model WorkspaceMention {
+  id              String           @id @default(cuid())
+  messageId       String
+  message         WorkspaceMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  mentionedUserId String
+  mentionedUser   User             @relation("MentionedUser", fields: [mentionedUserId], references: [id])
+  createdAt       DateTime         @default(now())
+
+  @@index([mentionedUserId])
+  @@map("workspace_mentions")
+}
+
+model WorkspaceAttachment {
+  id        String                  @id @default(cuid())
+  messageId String
+  message   WorkspaceMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  type      WorkspaceAttachmentType
+  recordId  String
+  label     String
+  createdAt DateTime                @default(now())
+
+  @@index([messageId])
+  @@map("workspace_attachments")
+}
+
+enum NotificationType {
+  MENTION
+  REPLY
+  IMPORTANT_ANNOUNCEMENT
+  LEAD_FOLLOWUP
+  WELCOME_CALL_OVERDUE
+}
+
+model Notification {
+  id          String            @id @default(cuid())
+  recipientId String
+  recipient   User              @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  messageId   String?
+  message     WorkspaceMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  entityType  String?
+  entityId    String?
+  actorId     String?
+  actor       User?             @relation("NotificationActor", fields: [actorId], references: [id])
+  content     String
+  read        Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+
+  @@index([recipientId, read])
+  @@map("notifications")
+}
+
+model LeadAssignmentHistory {
+  id             String   @id @default(cuid())
+  leadId         String
+  fromEmployeeId String?
+  toEmployeeId   String?
+  changedById    String
+  changedAt      DateTime @default(now())
+  note           String?  @db.Text
+
+  lead         Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromEmployee User? @relation("AssignmentHistoryFrom", fields: [fromEmployeeId], references: [id])
+  toEmployee   User? @relation("AssignmentHistoryTo", fields: [toEmployeeId], references: [id])
+  changedBy    User  @relation("AssignmentHistoryChangedBy", fields: [changedById], references: [id])
+
+  @@index([leadId])
+  @@index([changedAt])
+  @@map("lead_assignment_history")
+}
+
+model ProfileAssignmentHistory {
+  id               String    @id @default(cuid())
+  profileId        String
+  profile          Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         User      @relation("ProfileAssignmentEmployee", fields: [employeeId], references: [id])
+  assignedById     String?
+  assignedBy       User?     @relation("ProfileAssignmentAssignedBy", fields: [assignedById], references: [id])
+  assignedAt       DateTime?
+  endedAt          DateTime?
+  status           String?
+  unassignedReason String?
+  note             String?   @db.Text
+
+  remarks ProfileAssignmentRemark[]
+
+  @@index([profileId])
+  @@index([employeeId])
+  @@map("profile_assignment_history")
+}
+
+model ProfileAssignmentRemark {
+  id           String                   @id @default(cuid())
+  assignmentId String
+  assignment   ProfileAssignmentHistory @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  remark       String?                  @db.Text
+  followUpDate DateTime?
+  updatedById  String?
+  createdAt    DateTime                 @default(now())
+
+  @@index([assignmentId])
+  @@map("profile_assignment_remarks")
+}
+
+enum MeetingOutcome {
+  PENDING
+  POSITIVE
+  NEGATIVE
+  ONE_SIDED
+  FOLLOW_UP_NEEDED
+}
+
+model Religion {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  castes             Caste[]
+  profiles           Profile[]
+  partnerPreferences PartnerPreference[]
+
+  @@map("religions")
+}
+
+model Caste {
+  id         String    @id @default(cuid())
+  name       String
+  religionId String?
+  religion   Religion? @relation(fields: [religionId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  profiles           Profile[]
+  partnerPreferences PartnerPreference[]
+
+  @@unique([name, religionId])
+  @@index([religionId])
+  @@map("castes")
+}
+
+model Gotra {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profiles Profile[]
+
+  @@map("gotras")
+}
+
+model MotherTongueRef {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profiles           Profile[]
+  partnerPreferences PartnerPreference[]
+
+  @@map("mother_tongues")
+}
+
+enum ServiceStage {
+  ACTIVE
+  ON_HOLD
+  MEETING_STAGE
+  FAMILY_DISCUSSION
+  MARRIAGE_FIXED
+  SUCCESS_CLOSED
+  EXPIRED
+  STOPPED
+}
+
+enum HoldReason {
+  FAMILY_DECISION_PENDING
+  ALREADY_TALKING_TO_SOMEONE
+  CAREER_FOCUS
+  TRAVEL
+  HEALTH
+  OTHER
+}
+
+enum InterestStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  PENDING
+  HOLD
+}
+
+enum SuccessType {
+  ENGAGEMENT
+  MARRIAGE
+  SUCCESS_CLOSURE
+}
+
+// Added to existing Subscription model:
+//   serviceStage   ServiceStage @default(ACTIVE)
+//   holdReason     HoldReason?
+//   holdAt         DateTime?
+
+model ProfileShare {
+  id               String                        @id @default(cuid())
+  subscriptionId   String
+  subscription     Subscription                  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  sharedProfileId  String
+  sharedProfile    Profile                       @relation(fields: [sharedProfileId], references: [id])
+  sharedById       String?
+  sharedBy         User?                         @relation(fields: [sharedById], references: [id])
+  shortlisted      Boolean                       @default(false)
+  shortlistedAt    DateTime?
+  sharedAt         DateTime                      @default(now())
+  prospectStatus   InterestStatus                @default(PENDING)
+  prospectFeedback String?                       @db.Text
+  clientStatus     InterestStatus                @default(PENDING)
+  clientFeedback   String?                       @db.Text
+  emailStatus      String?
+  shareToken       String?                       @unique
+  interests        Interest[]
+  comments         ProfileShareComment[]
+  feedbackHistory  ProfileShareFeedbackHistory[]
+
+  @@index([subscriptionId])
+  @@index([sharedProfileId])
+  @@map("profile_shares")
+}
+
+model ProfileShareComment {
+  id             String       @id @default(cuid())
+  profileShareId String
+  profileShare   ProfileShare @relation(fields: [profileShareId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id])
+  comment        String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([profileShareId])
+  @@map("profile_share_comments")
+}
+
+enum FeedbackPartyType {
+  PROSPECT
+  CLIENT
+}
+
+model ProfileShareFeedbackHistory {
+  id             String            @id @default(cuid())
+  profileShareId String
+  profileShare   ProfileShare      @relation(fields: [profileShareId], references: [id], onDelete: Cascade)
+  type           FeedbackPartyType
+  status         InterestStatus?
+  feedback       String?           @db.Text
+  authorId       String
+  author         User              @relation(fields: [authorId], references: [id])
+  createdAt      DateTime          @default(now())
+
+  @@index([profileShareId])
+  @@map("profile_share_feedback_history")
+}
+
+model Interest {
+  id             String         @id @default(cuid())
+  profileShareId String
+  profileShare   ProfileShare   @relation(fields: [profileShareId], references: [id], onDelete: Cascade)
+  status         InterestStatus @default(PENDING)
+  sentAt         DateTime       @default(now())
+  respondedAt    DateTime?
+
+  @@index([profileShareId])
+  @@map("interests")
+}
+
+model SuccessStory {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  type           SuccessType
+  closedAt       DateTime     @default(now())
+  notes          String?      @db.Text
+
+  @@index([subscriptionId])
+  @@map("success_stories")
+}
+
+enum WelcomeCallStatus {
+  PENDING
+  COMPLETED
+}
+
+model WelcomeCall {
+  id            String            @id @default(cuid())
+  leadId        String?
+  lead          Lead?             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  profileId     String?
+  profile       Profile?          @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  assignedToId  String?
+  assignedTo    User?             @relation(fields: [assignedToId], references: [id])
+  status        WelcomeCallStatus @default(PENDING)
+  outcome       String?
+  notes         String?           @db.Text
+  sentVia       String?
+  attachmentUrl String?
+  completedAt   DateTime?
+  createdAt     DateTime          @default(now())
+  logs          WelcomeCallLog[]
+
+  @@index([assignedToId])
+  @@index([status])
+  @@map("welcome_calls")
+}
+
+model WelcomeCallLog {
+  id            String               @id @default(cuid())
+  welcomeCallId String
+  welcomeCall   WelcomeCall          @relation(fields: [welcomeCallId], references: [id], onDelete: Cascade)
+  status        WelcomeCallLogStatus
+  nextCallTime  DateTime?
+  note          String?              @db.Text
+  createdById   String?
+  createdBy     User?                @relation("WelcomeCallLogCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime             @default(now())
+
+  @@index([welcomeCallId])
+  @@map("welcome_call_logs")
+}
+
+enum WelcomeCallLogStatus {
+  PENDING
+  COMPLETED
+  MISSED
+  RESCHEDULED
+}
+
+model ProfileRemark {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id])
+  remark    String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@map("profile_remarks")
+}
+
+enum PaymentOfferStatus {
+  DRAFT
+  ACTIVE
+  OPENED
+  CHECKOUT_STARTED
+  PAID
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model PaymentOffer {
+  id    String @id @default(cuid())
+  token String @unique
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  originalAmount Float
+  discountType   DiscountType
+  discountValue  Float
+  finalAmount    Float
+  currency       String       @default("INR")
+
+  status    PaymentOfferStatus @default(ACTIVE)
+  expiresAt DateTime
+
+  openCount         Int       @default(0)
+  firstOpenedAt     DateTime?
+  lastOpenedAt      DateTime?
+  checkoutStartedAt DateTime?
+  paidAt            DateTime?
+
+  paymentGateway       String?
+  paymentOrderId       String?
+  paymentTransactionId String?
+
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token])
+  @@index([profileId])
+  @@index([status])
+  @@map("payment_offers")
+}
+
+model DeletedRecordLog {
+  id          String   @id @default(cuid())
+  modelType   String
+  recordId    String
+  label       String
+  deletedById String?
+  deletedAt   DateTime @default(now())
+
+  @@index([modelType])
+  @@index([recordId])
+  @@map("deleted_record_logs")
+}
+
+model ProfileAssignmentAuditLog {
+  id            String   @id @default(cuid())
+  profileId     String
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  employeeId    String?
+  employee      User?    @relation("ProfileAssignmentAuditEmployee", fields: [employeeId], references: [id])
+  oldEmployeeId Int?
+  updatedById   String?
+  updatedBy     User?    @relation("ProfileAssignmentAuditUpdatedBy", fields: [updatedById], references: [id])
+  oldUpdatedBy  BigInt?
+  module        String
+  action        String
+  remarks       String?  @db.Text
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  @@index([profileId])
+  @@map("profile_assignment_audit_log")
+}

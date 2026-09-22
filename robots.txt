@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /crm/
+Disallow: /admin/
+Disallow: /employee/
+Disallow: /storage/private/
+
+Sitemap: https://Elite Bandhanvivah.in/sitemap.xml

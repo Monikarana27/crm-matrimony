@@ -1,0 +1,919 @@
+
+===== DIR LISTING: dashboard/sales =====
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\sales\layout.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\sales\page.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\sales\leads\page.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\sales\leads\[id]\page.tsx
+
+===== DIR LISTING: dashboard/service =====
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\layout.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\page.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\matching\[profileId]\ai-suggestions.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\matching\[profileId]\matching-results.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\matching\[profileId]\page.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\profiles\page.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\profiles\[id]\page.tsx
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\service\welcome-calls\page.tsx
+
+===== FILE: src\app\(dashboard)\dashboard\sales\page.tsx =====
+import { auth } from "@/lib/auth/auth";
+import { StatWidget } from "@/components/widgets/stat-widget";
+import { FunnelBreakdown } from "@/components/widgets/funnel-breakdown";
+import { ConversionRateCard } from "@/components/widgets/conversion-rate-card";
+import { DashboardHero } from "@/components/layout/dashboard-hero";
+import { getSalesStats } from "@/lib/stats/dashboard-stats";
+import { getMyTarget } from "@/actions/sales-targets/sales-target.actions";
+import { Card, CardContent } from "@/components/ui/card";
+import { ensureFollowUpNotifications } from "@/actions/leads/lead.actions";
+import { Clock, UserPlus, PhoneCall } from "lucide-react";
+
+export default async function SalesDashboardPage() {
+  const session = await auth();
+  const stats = await getSalesStats(session!.user.id);
+  await ensureFollowUpNotifications();
+
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const myTarget = await getMyTarget(currentMonth, currentYear);
+
+  const monthLabel = now.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+
+  const targetPct =
+    myTarget.targetAmount && myTarget.targetAmount > 0
+      ? Math.min((myTarget.achievedAmount / myTarget.targetAmount) * 100, 100)
+      : 0;
+  const remaining = myTarget.targetAmount
+    ? Math.max(myTarget.targetAmount - myTarget.achievedAmount, 0)
+    : 0;
+
+  const funnelTotal = stats.leads.totalLeads;
+
+  const funnelRows = [
+    {
+      label: "New Leads",
+      value: stats.leads.newLeads,
+      total: funnelTotal,
+      colorClass: "border-blue-400 bg-blue-50",
+      barColorClass: "bg-blue-500",
+    },
+    {
+      label: "Contacted Leads",
+      value: stats.leads.contactedLeads,
+      total: funnelTotal,
+      colorClass: "border-cyan-400 bg-cyan-50",
+      barColorClass: "bg-cyan-500",
+    },
+    {
+      label: "Converted Leads",
+      value: stats.leads.convertedLeads,
+      total: funnelTotal,
+      colorClass: "border-emerald-400 bg-emerald-50",
+      barColorClass: "bg-emerald-500",
+    },
+    {
+      label: "Pending Follow-ups",
+      value: stats.leads.pendingLeads,
+      total: funnelTotal,
+      colorClass: "border-amber-400 bg-amber-50",
+      barColorClass: "bg-amber-500",
+    },
+    {
+      label: "Not Interested",
+      value: stats.leads.notInterestedLeads,
+      total: funnelTotal,
+      colorClass: "border-red-400 bg-red-50",
+      barColorClass: "bg-red-500",
+    },
+  ];
+
+  const quickActions = [
+    { label: "Call New Leads", href: "/dashboard/admin/leads?status=NEW", color: "bg-blue-500" },
+    { label: "Contacted Leads", href: "/dashboard/admin/leads?status=CONTACTED", color: "bg-cyan-500" },
+    { label: "View Converted", href: "/dashboard/admin/leads?status=CONVERTED", color: "bg-emerald-500" },
+    { label: "Pending Follow-ups", href: "/dashboard/admin/leads?status=PENDING", color: "bg-amber-500" },
+    { label: "Not Interested", href: "/dashboard/admin/leads?status=NOT_INTERESTED", color: "bg-red-500" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <DashboardHero
+        title={`Welcome back, ${session?.user?.name}`}
+        subtitle="Track your leads, conversions, and follow-ups."
+      />
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h3 className="text-base font-semibold">Today's Tasks</h3>
+              <p className="text-sm text-muted-foreground">Quick view of today's important sales work</p>
+            </div>
+            <span className="text-xs rounded-full bg-muted px-3 py-1 text-muted-foreground">
+              {now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-4">
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{stats.todaysTasks.pendingLeadsToday}</p>
+                <p className="text-sm font-medium">Pending Leads</p>
+                <p className="text-xs text-muted-foreground">Created today, need action</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <Clock className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{stats.todaysTasks.newLeadsToday}</p>
+                <p className="text-sm font-medium">New Leads Today</p>
+                <p className="text-xs text-muted-foreground">{stats.myLeads} total assigned</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                <UserPlus className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{stats.todaysTasks.followUpsDueToday}</p>
+                <p className="text-sm font-medium">Follow-ups Due</p>
+                <p className="text-xs text-muted-foreground">Calls / reminders due</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <PhoneCall className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatWidget
+          title="Total Leads"
+          lines={[{ label: "All Leads", value: stats.myLeads }]}
+          actionLabel="View Leads"
+          actionHref="/dashboard/admin/leads"
+        />
+        <StatWidget
+          title="Converted Leads"
+          lines={[{ label: "This Total", value: stats.leads.convertedLeads }]}
+        />
+        <StatWidget
+          title="New Leads Today"
+          lines={[{ label: "Today", value: stats.newLeadsToday }]}
+        />
+        <StatWidget
+          title="Follow-ups Due"
+          lines={[{ label: "Due Today", value: stats.todaysTasks.followUpsDueToday }]}
+          actionLabel="View Leads"
+          actionHref="/dashboard/admin/leads"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <FunnelBreakdown
+            title="Lead Pipeline"
+            subtitle="Current lead status breakdown"
+            badge="Live Overview"
+            rows={funnelRows}
+          />
+        </div>
+        <ConversionRateCard
+          rate={stats.leads.conversionRate}
+          month={monthLabel}
+          todaysActivityCount={stats.todaysActivityCount}
+        />
+      </div>
+
+      <Card className="overflow-hidden">
+        <CardContent className="bg-gradient-to-br from-primary to-[oklch(0.22_0.08_275)] p-6">
+          {myTarget.targetAmount === null ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-6 text-center text-primary-foreground/90">
+              <p className="text-lg font-semibold">No target assigned to you for {monthLabel}</p>
+              <p className="text-sm text-primary-foreground/70">
+                Contact your admin to assign a monthly target.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+              <div className="text-primary-foreground">
+                <p className="text-xs uppercase tracking-wide text-primary-foreground/70">
+                  My Target — {monthLabel}
+                </p>
+                <p className="font-display text-2xl font-bold">{session?.user?.name}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-center text-primary-foreground">
+                <div>
+                  <p className="text-xs text-primary-foreground/70">Target</p>
+                  <p className="font-semibold tabular-nums">
+                    ₹{myTarget.targetAmount.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-primary-foreground/70">Achieved</p>
+                  <p className="font-semibold tabular-nums">
+                    ₹{myTarget.achievedAmount.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-primary-foreground/70">Remaining</p>
+                  <p className="font-semibold tabular-nums">₹{remaining.toLocaleString("en-IN")}</p>
+                </div>
+              </div>
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-accent text-accent">
+                <span className="text-sm font-bold">{targetPct.toFixed(0)}%</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {quickActions.map((action) => (
+          <a
+            key={action.label}
+            href={action.href}
+            className={`${action.color} flex h-11 items-center justify-center rounded-md text-sm font-medium text-white transition-opacity hover:opacity-90`}>
+            {action.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+===== FILE: src\app\(dashboard)\dashboard\service\page.tsx =====
+import { auth } from "@/lib/auth/auth";
+import { StatWidget } from "@/components/widgets/stat-widget";
+import { DashboardHero } from "@/components/layout/dashboard-hero";
+import { getServiceStats } from "@/lib/stats/dashboard-stats";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CalendarClock, PhoneCall } from "lucide-react";
+
+export default async function ServiceDashboardPage() {
+  const session = await auth();
+  const stats = await getServiceStats(session!.user.id);
+
+  const quickActions = [
+    { label: "Assigned Profiles", href: "/dashboard/service/profiles", color: "bg-blue-500" },
+    { label: "Meetings", href: "/dashboard/admin/meetings", color: "bg-cyan-500" },
+    { label: "Welcome Calls", href: "/dashboard/service/welcome-calls", color: "bg-emerald-500" },
+    { label: "Service Status", href: "/dashboard/admin/subscriptions", color: "bg-amber-500" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <DashboardHero
+        title={`Welcome back, ${session?.user?.name}`}
+        subtitle="Here's your service activity for today."
+      />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatWidget
+          title="Assigned Profiles"
+          lines={[{ label: "Assigned to Me", value: stats.assignedProfiles }]}
+          actionLabel="View Profiles"
+          actionHref="/dashboard/service/profiles"
+        />
+        <StatWidget
+          title="Meetings Today"
+          lines={[{ label: "Scheduled Today", value: stats.meetingsToday }]}
+          actionLabel="View Meetings"
+          actionHref="/dashboard/admin/meetings"
+        />
+        <StatWidget
+          title="Active Subscriptions"
+          lines={[{ label: "Active", value: stats.activeServiceCount }]}
+          actionLabel="View Subscriptions"
+          actionHref="/dashboard/admin/subscriptions"
+        />
+        <StatWidget
+          title="Needs Attention"
+          lines={[
+            { label: "On Hold", value: stats.onHoldProfiles },
+            { label: "Expired", value: stats.expiredServiceCount },
+          ]}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <CalendarClock className="h-4 w-4 text-blue-600" />
+              Upcoming Meetings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {stats.upcomingMeetings.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                No upcoming meetings scheduled.
+              </p>
+            ) : (
+              stats.upcomingMeetings.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div>
+                    <p className="font-medium">{m.profile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(m.scheduledAt).toLocaleString("en-IN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                  </div>
+                  <span className="text-xs uppercase text-muted-foreground">{m.type.replace("_", " ")}</span>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <PhoneCall className="h-4 w-4 text-emerald-600" />
+              Today's Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tabular-nums">{stats.todaysActivityCount}</p>
+            <p className="text-sm text-muted-foreground">actions logged today</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {quickActions.map((action) => (
+          <a
+            key={action.label}
+            href={action.href}
+            className={`${action.color} flex h-11 items-center justify-center rounded-md text-sm font-medium text-white transition-opacity hover:opacity-90`}
+          >
+            {action.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+===== GREP: SalesTarget / target / achievement usage =====
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:5:import { salesTargetSchema } from "@/lib/validations/sales-target.schema";
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:24:data: { actorId, action, entityType: "SalesTarget", entityId },
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:51:export async function getSalesTargetsForMonth(month: number, year: number) {
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:60:const targets = await prisma.salesTarget.findMany({
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:83:const target = await prisma.salesTarget.findUnique({
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:95:export async function setSalesTargetAction(
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:101:const parsed = salesTargetSchema.safeParse({
+C:\Users\user\Elite Bandhan-crm\src\actions\sales-targets\sales-target.actions.ts:112:const target = await prisma.salesTarget.upsert({
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\page.tsx:1:import { getSalesTargetsForMonth } from "@/actions/sales-targets/sales-target.actions";
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\page.tsx:3:import { SalesTargetsGrid } from "./sales-targets-grid";
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\page.tsx:5:export default async function SalesTargetsPage({
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\page.tsx:15:const targets = await getSalesTargetsForMonth(selectedMonth, selectedYear);
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\page.tsx:28:<SalesTargetsGrid
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\sales-targets-grid.tsx:9:import { setSalesTargetAction } from "@/actions/sales-targets/sales-target.actions";
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\sales-targets-grid.tsx:28:const [state, formAction, isPending] = useActionState(setSalesTargetAction, { error: null });
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\sales-targets\sales-targets-grid.tsx:122:export function SalesTargetsGrid({
+C:\Users\user\Elite Bandhan-crm\src\lib\stats\notifications.ts:65:const targets = await prisma.salesTarget.findMany({
+C:\Users\user\Elite Bandhan-crm\src\lib\validations\sales-target.schema.ts:3:export const salesTargetSchema = z.object({
+C:\Users\user\Elite Bandhan-crm\src\lib\validations\sales-target.schema.ts:10:export type SalesTargetInput = z.infer<typeof salesTargetSchema>;
+===== FILE: src\lib\stats\dashboard-stats.ts =====
+import { prisma } from "@/lib/db/prisma";
+
+async function getLeadFunnel(where: { assignedToId?: string } = {}) {
+  const [newLeads, contactedLeads, convertedLeads, pendingLeads, notInterestedLeads, totalLeads] =
+    await Promise.all([
+      prisma.lead.count({ where: { ...where, status: "NEW" } }),
+      prisma.lead.count({ where: { ...where, status: "CONTACTED" } }),
+      prisma.lead.count({ where: { ...where, status: "CONVERTED" } }),
+      prisma.lead.count({ where: { ...where, status: "PENDING" } }),
+      prisma.lead.count({ where: { ...where, status: "NOT_INTERESTED" } }),
+      prisma.lead.count({ where }),
+    ]);
+
+  const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+
+  return {
+    totalLeads,
+    newLeads,
+    contactedLeads,
+    convertedLeads,
+    pendingLeads,
+    notInterestedLeads,
+    conversionRate,
+  };
+}
+
+async function getProfileAssignmentBreakdown(where: { assignedToId?: string } = {}) {
+  const [assigned, reassigned, unassigned] = await Promise.all([
+    prisma.profile.count({ where: { ...where, status: "ASSIGNED" } }),
+    prisma.profile.count({ where: { ...where, status: "REASSIGNED" } }),
+    prisma.profile.count({ where: { ...where, status: "UNASSIGNED" } }),
+  ]);
+  return { assigned, reassigned, unassigned };
+}
+
+async function getTodaysActivityCount(actorId?: string) {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  return prisma.activityLog.count({
+    where: {
+      ...(actorId ? { actorId } : {}),
+      createdAt: { gte: todayStart, lte: todayEnd },
+    },
+  });
+}
+
+async function getTodaysSummary() {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [newLeadsToday, profilesCreatedToday, meetingsToday, pendingApprovals, activeServices] =
+    await Promise.all([
+      prisma.lead.count({
+        where: { createdAt: { gte: todayStart, lte: todayEnd } },
+      }),
+      prisma.profile.count({
+        where: { createdAt: { gte: todayStart, lte: todayEnd } },
+      }),
+      prisma.meeting.count({
+        where: { scheduledAt: { gte: todayStart, lte: todayEnd } },
+      }),
+      prisma.profile.count({
+        where: { approvalStatus: "PENDING_APPROVAL" },
+      }),
+      prisma.subscription.count({ where: { status: "ACTIVE" } }),
+    ]);
+
+  return { newLeadsToday, profilesCreatedToday, meetingsToday, pendingApprovals, activeServices };
+}
+
+export async function getAdminStats() {
+  const [
+    funnel,
+    profileAssignment,
+    activeEmployees,
+    totalEmployees,
+    activeServices,
+    holdServices,
+    expiredServices,
+    paidPayments,
+    pendingPayments,
+    failedPayments,
+    faceToFaceMeetings,
+    teleMeetings,
+    todaysActivityCount,
+    totalProfiles,
+    maleProfiles,
+    femaleProfiles,
+    profilesOnHold,
+    todaysSummary,
+  ] = await Promise.all([
+    getLeadFunnel(),
+    getProfileAssignmentBreakdown(),
+    prisma.user.count({ where: { active: true } }),
+    prisma.user.count(),
+    prisma.subscription.count({ where: { status: "ACTIVE" } }),
+    prisma.subscription.count({ where: { status: "HOLD" } }),
+    prisma.subscription.count({ where: { status: "EXPIRED" } }),
+    prisma.payment.count({ where: { status: "PAID" } }),
+    prisma.payment.count({ where: { status: "PENDING" } }),
+    prisma.payment.count({ where: { status: "FAILED" } }),
+    prisma.meeting.count({ where: { type: "FACE_TO_FACE" } }),
+    prisma.meeting.count({ where: { type: "TELE" } }),
+    getTodaysActivityCount(),
+    prisma.profile.count(),
+    prisma.profile.count({ where: { gender: "MALE" } }),
+    prisma.profile.count({ where: { gender: "FEMALE" } }),
+    prisma.profile.count({ where: { status: "ON_HOLD" } }),
+    getTodaysSummary(),
+  ]);
+  const paidAmountResult = await prisma.payment.aggregate({
+    where: { status: "PAID" },
+    _sum: { amount: true },
+  });
+
+  return {
+    leads: funnel,
+    profileAssignment,
+    profiles: { totalProfiles, maleProfiles, femaleProfiles, profilesOnHold },
+    employees: { activeEmployees, totalEmployees },
+    services: { activeServices, holdServices, expiredServices },
+    payments: {
+      paidPayments,
+      pendingPayments,
+      failedPayments,
+      totalCollected: paidAmountResult._sum.amount ?? 0,
+    },
+    meetings: { faceToFaceMeetings, teleMeetings },
+    todaysActivityCount,
+    todaysSummary,
+  };
+}
+
+export async function getSalesStats(userId: string) {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [
+    funnel,
+    profileAssignment,
+    todaysActivityCount,
+    newLeadsToday,
+    pendingLeadsCount,
+    pendingLeadsToday,
+    followUpsDueToday,
+  ] = await Promise.all([
+    getLeadFunnel({ assignedToId: userId }),
+    getProfileAssignmentBreakdown({ assignedToId: userId }),
+    getTodaysActivityCount(userId),
+    prisma.lead.count({
+      where: { assignedToId: userId, createdAt: { gte: todayStart, lte: todayEnd } },
+    }),
+    prisma.lead.count({ where: { assignedToId: userId, status: "PENDING" } }),
+    prisma.lead.count({
+      where: { assignedToId: userId, status: "NEW", createdAt: { gte: todayStart, lte: todayEnd } },
+    }),
+    prisma.lead.count({
+      where: { assignedToId: userId, followUpDate: { lte: todayEnd } },
+    }),
+  ]);
+
+  return {
+    leads: funnel,
+    profileAssignment,
+    todaysActivityCount,
+    newLeadsToday,
+    pendingLeadsCount,
+    myLeads: funnel.totalLeads,
+    myProfiles: profileAssignment.assigned + profileAssignment.reassigned,
+    todaysTasks: {
+      pendingLeadsToday,
+      newLeadsToday,
+      followUpsDueToday,
+    },
+  };
+}
+export async function getServiceStats(userId: string) {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [
+    assignedProfiles,
+    meetingsToday,
+    activeServiceCount,
+    onHoldProfiles,
+    expiredServiceCount,
+    upcomingMeetings,
+    todaysActivityCount,
+  ] = await Promise.all([
+    prisma.profile.count({ where: { assignedToId: userId } }),
+    prisma.meeting.count({
+      where: {
+        assignedToId: userId,
+        scheduledAt: { gte: todayStart, lte: todayEnd },
+      },
+    }),
+    prisma.subscription.count({
+      where: { status: "ACTIVE", profile: { assignedToId: userId } },
+    }),
+    prisma.profile.count({ where: { assignedToId: userId, status: "ON_HOLD" } }),
+    prisma.subscription.count({
+      where: { status: "EXPIRED", profile: { assignedToId: userId } },
+    }),
+    prisma.meeting.findMany({
+      where: {
+        assignedToId: userId,
+        scheduledAt: { gte: todayStart },
+        status: "SCHEDULED",
+      },
+      orderBy: { scheduledAt: "asc" },
+      take: 5,
+      include: { profile: { select: { name: true } } },
+    }),
+    getTodaysActivityCount(userId),
+  ]);
+
+  return {
+    assignedProfiles,
+    meetingsToday,
+    activeServiceCount,
+    onHoldProfiles,
+    expiredServiceCount,
+    upcomingMeetings,
+    todaysActivityCount,
+  };
+}
+
+export async function getRecentActivity(limit = 10) {
+  const logs = await prisma.activityLog.findMany({
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    include: { actor: { select: { name: true } } },
+  });
+
+  return logs.map((log) => ({
+    id: log.id,
+    actorName: log.actor.name,
+    action: log.action,
+    entityType: log.entityType,
+    createdAt: log.createdAt,
+  }));
+}
+
+===== FILE: src\actions\sales-targets\sales-target.actions.ts =====
+"use server";
+
+import { prisma } from "@/lib/db/prisma";
+import { auth } from "@/lib/auth/auth";
+import { salesTargetSchema } from "@/lib/validations/sales-target.schema";
+import { revalidatePath } from "next/cache";
+
+async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
+
+async function requireStaff() {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  return session;
+}
+
+async function logActivity(actorId: string, action: string, entityId: string) {
+  await prisma.activityLog.create({
+    data: { actorId, action, entityType: "SalesTarget", entityId },
+  });
+}
+
+/**
+ * Achieved amount is auto-derived: sum of PAID payments for services
+ * belonging to profiles currently assigned to this user, paid within
+ * the given month/year.
+ */
+async function getAchievedAmount(userId: string, month: number, year: number) {
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+  const result = await prisma.payment.aggregate({
+    where: {
+      status: "PAID",
+      paidAt: { gte: monthStart, lte: monthEnd },
+      subscription: {
+        profile: { assignedToId: userId },
+      },
+    },
+    _sum: { amount: true },
+  });
+
+  return result._sum.amount ?? 0;
+}
+
+export async function getSalesTargetsForMonth(month: number, year: number) {
+  await requireAdmin();
+
+  const employees = await prisma.user.findMany({
+    where: { active: true, role: { in: ["SALES", "SERVICE"] } },
+    select: { id: true, name: true, role: true },
+    orderBy: { name: "asc" },
+  });
+
+  const targets = await prisma.salesTarget.findMany({
+    where: { month, year },
+  });
+
+  const results = await Promise.all(
+    employees.map(async (emp) => {
+      const target = targets.find((t) => t.userId === emp.id);
+      const achieved = await getAchievedAmount(emp.id, month, year);
+      return {
+        employee: emp,
+        targetAmount: target?.targetAmount ?? null,
+        achievedAmount: achieved,
+      };
+    })
+  );
+
+  return results;
+}
+
+export async function getMyTarget(month: number, year: number) {
+  const session = await requireStaff();
+  const userId = session.user.id;
+
+  const target = await prisma.salesTarget.findUnique({
+    where: { userId_month_year: { userId, month, year } },
+  });
+
+  const achieved = await getAchievedAmount(userId, month, year);
+
+  return {
+    targetAmount: target?.targetAmount ?? null,
+    achievedAmount: achieved,
+  };
+}
+
+export async function setSalesTargetAction(
+  _prevState: unknown,
+  formData: FormData
+) {
+  const session = await requireAdmin();
+
+  const parsed = salesTargetSchema.safeParse({
+    userId: formData.get("userId"),
+    month: formData.get("month"),
+    year: formData.get("year"),
+    targetAmount: formData.get("targetAmount"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const target = await prisma.salesTarget.upsert({
+    where: {
+      userId_month_year: {
+        userId: parsed.data.userId,
+        month: parsed.data.month,
+        year: parsed.data.year,
+      },
+    },
+    update: { targetAmount: parsed.data.targetAmount },
+    create: {
+      userId: parsed.data.userId,
+      month: parsed.data.month,
+      year: parsed.data.year,
+      targetAmount: parsed.data.targetAmount,
+      createdById: session.user.id,
+    },
+  });
+
+  await logActivity(session.user.id, "SET_SALES_TARGET", target.id);
+
+  revalidatePath("/dashboard/admin/sales-targets");
+  return { error: null };
+}
+
+===== FILE: src\app\(dashboard)\dashboard\admin\sales-targets\sales-targets-grid.tsx =====
+"use client";
+
+import { useActionState, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { setSalesTargetAction } from "@/actions/sales-targets/sales-target.actions";
+import { ViewAsButton } from "@/components/shared/view-as-button";
+import Link from "next/link";
+
+type TargetData = {
+  employee: { id: string; name: string; role: string };
+  targetAmount: number | null;
+  achievedAmount: number;
+};
+
+function TargetCard({
+  data,
+  month,
+  year,
+}: {
+  data: TargetData;
+  month: number;
+  year: number;
+}) {
+  const [state, formAction, isPending] = useActionState(setSalesTargetAction, { error: null });
+  const [editing, setEditing] = useState(!data.targetAmount);
+
+  const pct =
+    data.targetAmount && data.targetAmount > 0
+      ? Math.min((data.achievedAmount / data.targetAmount) * 100, 100)
+      : 0;
+
+  return (
+    <Card>
+     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="text-base font-semibold">
+            <Link href={`/dashboard/admin/employees/${data.employee.id}/edit`} className="hover:underline">
+              {data.employee.name}
+            </Link>
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">{month}/{year}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className={
+              pct >= 100
+                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                : "bg-amber-100 text-amber-700 border-amber-200"
+            }
+          >
+            {pct >= 100 ? "Achieved" : "In Progress"}
+          </Badge>
+          <ViewAsButton userId={data.employee.id} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {editing ? (
+          <form action={formAction} className="space-y-3">
+            <input type="hidden" name="userId" value={data.employee.id} />
+            <input type="hidden" name="month" value={month} />
+            <input type="hidden" name="year" value={year} />
+            <div className="space-y-1.5">
+              <Label htmlFor={`target-${data.employee.id}`} className="text-xs">
+                Target Amount (₹)
+              </Label>
+              <Input
+                id={`target-${data.employee.id}`}
+                name="targetAmount"
+                type="number"
+                defaultValue={data.targetAmount ?? ""}
+                placeholder="200000"
+                required
+              />
+            </div>
+            {state?.error && <p className="text-xs text-destructive">{state.error}</p>}
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={isPending}>
+                {isPending ? "Saving..." : "Save Target"}
+              </Button>
+              {data.targetAmount !== null && (
+                <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Target</span>
+              <span className="font-semibold tabular-nums">
+                ₹{data.targetAmount?.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Achieved</span>
+              <span className="font-semibold tabular-nums text-emerald-600">
+                ₹{data.achievedAmount.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              Edit Target
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function SalesTargetsGrid({
+  targets,
+  selectedMonth,
+  selectedYear,
+}: {
+  targets: TargetData[];
+  selectedMonth: number;
+  selectedYear: number;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {targets.map((data) => (
+        <TargetCard
+          key={data.employee.id}
+          data={data}
+          month={selectedMonth}
+          year={selectedYear}
+        />
+      ))}
+    </div>
+  );
+}
+===== FILE FULL: src\lib\stats\dashboard-stats.ts =====
+===== FILE FULL: src\actions\sales-targets\sales-target.actions.ts =====

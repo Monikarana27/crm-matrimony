@@ -1,0 +1,423 @@
+Folder PATH listing
+Volume serial number is 0000021C E83E:B1BC
+C:\USERS\USER\Elite Bandhan-CRM\SRC
+|   middleware.ts
+|   not-found.tsx
+|   
++---actions
+|   +---activity-logs
+|   |       activity-log.actions.ts
+|   |       
+|   +---assignments
+|   |       assignment.actions.ts
+|   |       
+|   +---auth
+|   |       impersonation.actions.ts
+|   |       login.action.ts
+|   |       logout.action.ts
+|   |       
+|   +---call-logs
+|   |       call-log.actions.ts
+|   |       
+|   +---documents
+|   |       document.actions.ts
+|   |       
+|   +---employees
+|   |       employee.actions.ts
+|   |       
+|   +---hr
+|   |       hr.actions.ts
+|   |       
+|   +---leads
+|   |       lead-remark.actions.ts
+|   |       lead.actions.ts
+|   |       
+|   +---matching
+|   |       matching.actions.ts
+|   |       
+|   +---meetings
+|   |       meeting.actions.ts
+|   |       
+|   +---payments
+|   |       payment.actions.ts
+|   |       
+|   +---plans
+|   |       plan.actions.ts
+|   |       
+|   +---profile-queue
+|   |       create-draft-and-complete.actions.ts
+|   |       create-from-queue.action.ts
+|   |       profile-queue.actions.ts
+|   |       
+|   +---profiles
+|   |       approval.actions.ts
+|   |       email-profile.action.ts
+|   |       profile.actions.ts
+|   |       send-matches.action.ts
+|   |       
+|   +---sales-targets
+|   |       sales-target.actions.ts
+|   |       
+|   +---settings
+|   |       settings.actions.ts
+|   |       
+|   +---subscriptions
+|   |       expiry.actions.ts
+|   |       subscription.actions.ts
+|   |       
+|   \---workspace
+|           workspace.actions.ts
+|           
++---app
+|   |   favicon.ico
+|   |   globals.css
+|   |   layout.tsx
+|   |   page.tsx
+|   |   
+|   +---(auth)
+|   |   \---login
+|   |           page.tsx
+|   |           
+|   +---(dashboard)
+|   |   \---dashboard
+|   |       +---admin
+|   |       |   |   layout.tsx
+|   |       |   |   loading.tsx
+|   |       |   |   page.tsx
+|   |       |   |   
+|   |       |   +---activity-logs
+|   |       |   |       activity-logs-table.tsx
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---assignments
+|   |       |   |       assignments-filter.tsx
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---employees
+|   |       |   |   |   employee-form.tsx
+|   |       |   |   |   employee-row-actions.tsx
+|   |       |   |   |   employees-table.tsx
+|   |       |   |   |   page.tsx
+|   |       |   |   |   
+|   |       |   |   +---new
+|   |       |   |   |       page.tsx
+|   |       |   |   |       
+|   |       |   |   \---[id]
+|   |       |   |       \---edit
+|   |       |   |               page.tsx
+|   |       |   |               
+|   |       |   +---leads
+|   |       |   |   |   lead-assignment-history-dialog.tsx
+|   |       |   |   |   lead-form.tsx
+|   |       |   |   |   leads-table.tsx
+|   |       |   |   |   page.tsx
+|   |       |   |   |   
+|   |       |   |   +---assign
+|   |       |   |   |       bulk-assign-form.tsx
+|   |       |   |   |       page.tsx
+|   |       |   |   |       
+|   |       |   |   +---new
+|   |       |   |   |       page.tsx
+|   |       |   |   |       
+|   |       |   |   \---[id]
+|   |       |   |       |   lead-remark-form.tsx
+|   |       |   |       |   page.tsx
+|   |       |   |       |   
+|   |       |   |       \---edit
+|   |       |   |               page.tsx
+|   |       |   |               
+|   |       |   +---login-history
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---meetings
+|   |       |   |   |   meetings-table.tsx
+|   |       |   |   |   page.tsx
+|   |       |   |   |   
+|   |       |   |   \---new
+|   |       |   |           page.tsx
+|   |       |   |           schedule-meeting-form.tsx
+|   |       |   |           
+|   |       |   +---payments
+|   |       |   |   |   page.tsx
+|   |       |   |   |   payments-table.tsx
+|   |       |   |   |   
+|   |       |   |   \---new
+|   |       |   |           page.tsx
+|   |       |   |           record-payment-form.tsx
+|   |       |   |           
+|   |       |   +---plans
+|   |       |   |   |   page.tsx
+|   |       |   |   |   plan-form.tsx
+|   |       |   |   |   plans-table.tsx
+|   |       |   |   |   
+|   |       |   |   +---new
+|   |       |   |   |       page.tsx
+|   |       |   |   |       
+|   |       |   |   \---[id]
+|   |       |   |       \---edit
+|   |       |   |               page.tsx
+|   |       |   |               
+|   |       |   +---profile-approvals
+|   |       |   |       approval-list.tsx
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---profile-queue
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---profiles
+|   |       |   |   |   email-profile-button.tsx
+|   |       |   |   |   loading.tsx
+|   |       |   |   |   page.tsx
+|   |       |   |   |   profile-assign-action.tsx
+|   |       |   |   |   profile-form.tsx
+|   |       |   |   |   profile-row-actions.tsx
+|   |       |   |   |   profiles-table.tsx
+|   |       |   |   |   unified-assign-action.tsx
+|   |       |   |   |   
+|   |       |   |   +---new
+|   |       |   |   |       page.tsx
+|   |       |   |   |       
+|   |       |   |   +---tabs
+|   |       |   |   |       basic-info-tab.tsx
+|   |       |   |   |       education-career-tab.tsx
+|   |       |   |   |       family-tab.tsx
+|   |       |   |   |       field.tsx
+|   |       |   |   |       lifestyle-tab.tsx
+|   |       |   |   |       location-tab.tsx
+|   |       |   |   |       partner-preference-tab.tsx
+|   |       |   |   |       religion-horoscope-tab.tsx
+|   |       |   |   |       source-contact-tab.tsx
+|   |       |   |   |       
+|   |       |   |   \---[id]
+|   |       |   |       \---edit
+|   |       |   |               page.tsx
+|   |       |   |               
+|   |       |   +---sales-targets
+|   |       |   |       page.tsx
+|   |       |   |       sales-targets-grid.tsx
+|   |       |   |       
+|   |       |   +---service-overview
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---settings
+|   |       |   |       page.tsx
+|   |       |   |       settings-form.tsx
+|   |       |   |       
+|   |       |   +---subscriptions
+|   |       |   |   |   page.tsx
+|   |       |   |   |   subscriptions-table.tsx
+|   |       |   |   |   
+|   |       |   |   +---expiring
+|   |       |   |   |       page.tsx
+|   |       |   |   |       
+|   |       |   |   \---new
+|   |       |   |           attach-subscription-form.tsx
+|   |       |   |           page.tsx
+|   |       |   |           
+|   |       |   \---welcome-calls
+|   |       |       |   call-logs-table.tsx
+|   |       |       |   page.tsx
+|   |       |       |   
+|   |       |       \---new
+|   |       |               log-call-form.tsx
+|   |       |               page.tsx
+|   |       |               
+|   |       +---hr
+|   |       |   |   layout.tsx
+|   |       |   |   page.tsx
+|   |       |   |   
+|   |       |   +---attendance
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---leave
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---payroll
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   +---performance
+|   |       |   |       page.tsx
+|   |       |   |       
+|   |       |   \---recruitment
+|   |       |           page.tsx
+|   |       |           
+|   |       +---profile-creator
+|   |       |   |   layout.tsx
+|   |       |   |   page.tsx
+|   |       |   |   
+|   |       |   +---create
+|   |       |   |   \---[queueId]
+|   |       |   |           page.tsx
+|   |       |   |           start-form.tsx
+|   |       |   |           
+|   |       |   \---edit
+|   |       |       \---[id]
+|   |       |               page.tsx
+|   |       |               
+|   |       +---sales
+|   |       |       layout.tsx
+|   |       |       page.tsx
+|   |       |       
+|   |       +---service
+|   |       |   |   layout.tsx
+|   |       |   |   page.tsx
+|   |       |   |   
+|   |       |   +---matching
+|   |       |   |   \---[profileId]
+|   |       |   |           ai-suggestions.tsx
+|   |       |   |           matching-results.tsx
+|   |       |   |           page.tsx
+|   |       |   |           
+|   |       |   +---profiles
+|   |       |   |   |   page.tsx
+|   |       |   |   |   
+|   |       |   |   \---[id]
+|   |       |   |           page.tsx
+|   |       |   |           
+|   |       |   \---welcome-calls
+|   |       |           page.tsx
+|   |       |           
+|   |       \---workspace
+|   |               attachment-picker.tsx
+|   |               composer.tsx
+|   |               layout.tsx
+|   |               mention-input.tsx
+|   |               message-card.tsx
+|   |               page.tsx
+|   |               workspace-feed.tsx
+|   |               
+|   \---api
+|       +---ai
+|       |   \---match-suggestions
+|       |           route.ts
+|       |           
+|       +---auth
+|       |   \---[...nextauth]
+|       |           route.ts
+|       |           
+|       +---biodata
+|       |   \---[profileId]
+|       |           route.tsx
+|       |           
+|       +---upload
+|       |       route.ts
+|       |       
+|       \---website-profiles
+|               route.ts
+|               
++---components
+|   +---layout
+|   |       command-palette.tsx
+|   |       dashboard-hero.tsx
+|   |       dashboard-shell.tsx
+|   |       header.tsx
+|   |       impersonation-banner.tsx
+|   |       notification-bell.tsx
+|   |       sidebar.tsx
+|   |       
+|   +---shared
+|   |       assign-action.tsx
+|   |       biodata-download-button.tsx
+|   |       data-table.tsx
+|   |       document-uploader.tsx
+|   |       photos-tab.tsx
+|   |       view-as-button.tsx
+|   |       
+|   +---ui
+|   |       alert-dialog.tsx
+|   |       avatar.tsx
+|   |       badge.tsx
+|   |       button.tsx
+|   |       card.tsx
+|   |       dialog.tsx
+|   |       dropdown-menu.tsx
+|   |       input.tsx
+|   |       label.tsx
+|   |       phone-input.tsx
+|   |       select.tsx
+|   |       separator.tsx
+|   |       sheet.tsx
+|   |       skeleton.tsx
+|   |       table.tsx
+|   |       textarea.tsx
+|   |       
+|   \---widgets
+|           conversion-rate-card.tsx
+|           funnel-breakdown.tsx
+|           notifications-panel.tsx
+|           placeholder-widget.tsx
+|           quick-actions.tsx
+|           recent-activity.tsx
+|           stat-widget.tsx
+|           
++---config
+|       navigation.ts
+|       
++---lib
+|   |   utils.ts
+|   |   
+|   +---ai
+|   |   |   client.ts
+|   |   |   
+|   |   +---agents
+|   |   |       brief.agent.ts
+|   |   |       pitch.agent.ts
+|   |   |       
+|   |   +---match-suggestions
+|   |   \---schemas
+|   |           match-result.ts
+|   |           search-brief.ts
+|   |           
+|   +---auth
+|   |       auth.config.ts
+|   |       auth.ts
+|   |       get-acting-user.ts
+|   |       impersonation.ts
+|   |       password.ts
+|   |       
+|   +---biodata
+|   |       biodata-document.tsx
+|   |       build-biodata-data.ts
+|   |       
+|   +---data
+|   |       countries.ts
+|   |       
+|   +---db
+|   |       prisma.ts
+|   |       
+|   +---email
+|   |       send-profile-email.ts
+|   |       
+|   +---matching
+|   |       scoring.ts
+|   |       
+|   +---permissions
+|   |       can.ts
+|   |       guard.ts
+|   |       role-routes.ts
+|   |       roles.ts
+|   |       
+|   +---stats
+|   |       dashboard-stats.ts
+|   |       notifications.ts
+|   |       
+|   +---utils
+|   |       generate-password.ts
+|   |       profile-code.ts
+|   |       profile-data.ts
+|   |       
+|   \---validations
+|           auth.schema.ts
+|           call-log.schema.ts
+|           employee.schema.ts
+|           lead.schema.ts
+|           meeting.schema.ts
+|           payment.schema.ts
+|           plan.schema.ts
+|           profile.schema.ts
+|           sales-target.schema.ts
+|           subscription.schema.ts
+|           
+\---types
+        next-auth.d.ts
+        

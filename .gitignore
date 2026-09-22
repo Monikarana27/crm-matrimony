@@ -1,0 +1,74 @@
+# Dependencies
+/node_modules
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Environment variables (NEVER commit these — contains DB password, AUTH_SECRET)
+.env
+.env*.local
+
+# Misc
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.env.production
+
+node_modules/
+.next/
+
+# User-uploaded files (government IDs, photos, docs — never commit to git)
+public/uploads/
+old-storage/
+
+# One-off migration scripts with hardcoded local DB credentials (migration complete, not needed in git)
+scripts/check-subscription-mappings.ts
+scripts/diagnose-docs-v2.ts
+scripts/diagnose-docs.ts
+scripts/dump-bad-raw.ts
+scripts/find-bad-encoding.ts
+scripts/inspect-one.ts
+scripts/list-govid-files.ts
+scripts/migrate-castes.ts
+scripts/migrate-crm-meetings.ts
+scripts/migrate-gotras.ts
+scripts/migrate-leads.ts
+scripts/migrate-mother-tongues.ts
+scripts/migrate-partner-preferences.ts
+scripts/migrate-plans.ts
+scripts/migrate-profiles.ts
+scripts/migrate-religions.ts
+scripts/migrate-sale-achievements.ts
+scripts/migrate-subscriptions.ts
+scripts/migrate-team-assignments.ts
+scripts/migrate-users.ts
+scripts/migrate-welcome-call-attachments.ts
+scripts/repair-documents.ts
+migrate-profile-shares.ts
+migrate-welcome-calls.ts
+
+# Backup files from patch scripts (never commit)
+*.bak
+*.bak-*
+
+# One-off local scripts / secrets
+.env.bak
+config.php
+check-user.ts
+check-combo.js
+check-tmp.js
+migrate-shahina.ts

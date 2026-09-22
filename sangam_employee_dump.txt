@@ -1,0 +1,197 @@
+
+===== FILE: src\app\(dashboard)\dashboard\admin\employees\employee-form.tsx =====
+"use client";
+
+import { useActionState, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
+
+interface EmployeeFormProps {
+  mode: "create" | "edit";
+  defaultValues?: {
+    name: string;
+    email: string;
+    phone?: string | null;
+    department?: string | null;
+    role: string;
+    active: boolean;
+  };
+  action: (prevState: unknown, formData: FormData) => Promise<{ error: string | null }>;
+}
+
+export function EmployeeForm({ mode, defaultValues, action }: EmployeeFormProps) {
+  const [state, formAction, isPending] = useActionState(action, { error: null });
+  const [role, setRole] = useState(defaultValues?.role ?? "SALES");
+  const [department, setDepartment] = useState(defaultValues?.department ?? "");
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <form action={formAction} className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input id="name" name="name" defaultValue={defaultValues?.name} placeholder="e.g. Priya Sharma" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" type="email" defaultValue={defaultValues?.email} placeholder="priya@Elite Bandhancrm.com" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" name="phone" defaultValue={defaultValues?.phone ?? ""} placeholder="+91 98765 43210" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">
+                {mode === "edit" ? "New Password (optional)" : "Password"}
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder={mode === "edit" ? "Leave blank to keep current" : ""}
+                required={mode === "create"}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="SALES">Sales</SelectItem>
+                  <SelectItem value="PROFILE_CREATOR">Profile Creator</SelectItem>
+                  <SelectItem value="SERVICE">Service</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                </SelectContent>
+              </Select>
+              <input type="hidden" name="role" value={role} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger id="department">
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SALES_EMP">Sales</SelectItem>
+                  <SelectItem value="PROFILE_EMP">Profile</SelectItem>
+                  <SelectItem value="SERVICE_EMP">Service</SelectItem>
+                  <SelectItem value="HR_EMP">HR</SelectItem>
+                </SelectContent>
+              </Select>
+              <input type="hidden" name="department" value={department} />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="active"
+              name="active"
+              defaultChecked={defaultValues?.active ?? true}
+              className="h-4 w-4 rounded border-input"
+            />
+            <Label htmlFor="active" className="cursor-pointer font-normal">
+              Active (employee can log in)
+            </Label>
+          </div>
+
+          {state?.error && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.error}</p>
+          )}
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Saving..." : mode === "create" ? "Create Employee" : "Save Changes"}
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/admin/employees">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Cancel
+              </Link>
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+===== FILE: src\app\(dashboard)\dashboard\admin\employees\new\page.tsx =====
+import { DashboardHero } from "@/components/layout/dashboard-hero";
+import { EmployeeForm } from "../employee-form";
+import { createEmployeeAction } from "@/actions/employees/employee.actions";
+
+export default function NewEmployeePage() {
+  return (
+    <div className="space-y-6">
+      <DashboardHero
+        title="Add Employee"
+        subtitle="Create a new team member account."
+      />
+      <EmployeeForm mode="create" action={createEmployeeAction} />
+    </div>
+  );
+}
+
+===== FILE: src\app\(dashboard)\dashboard\admin\employees\[id]\edit\page.tsx =====
+(not found)
+
+===== FILE: src\app\(dashboard)\dashboard\admin\employees\page.tsx =====
+import Link from "next/link";
+import { getEmployees } from "@/actions/employees/employee.actions";
+import { DashboardHero } from "@/components/layout/dashboard-hero";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { EmployeesTable } from "./employees-table";
+
+export default async function EmployeesPage() {
+  const employees = await getEmployees();
+
+  return (
+    <div className="space-y-6">
+      <DashboardHero
+        title="Employees"
+        subtitle="Manage your Sales, Service, and Admin team members."
+      />
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">All Employees</h2>
+        <Button asChild>
+          <Link href="/dashboard/admin/employees/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Employee
+          </Link>
+        </Button>
+      </div>
+
+      <EmployeesTable employees={employees} />
+    </div>
+  );
+}
+
+===== FIND: employee actions files =====
+C:\Users\user\Elite Bandhan-crm\src\actions\employees\employee.actions.ts
+===== FIND: employee validation schemas =====
+C:\Users\user\Elite Bandhan-crm\src\lib\validations\employee.schema.ts

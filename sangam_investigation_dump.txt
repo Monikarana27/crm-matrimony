@@ -1,0 +1,264 @@
+
+===== FILE: prisma\seed-permissions.ts =====
+import { PrismaClient, Role, PermissionAction } from "@prisma/client";
+const prisma = new PrismaClient();
+
+const MODULES = ["Leads", "Conversion", "ProfileCreation", "Profiles", "Service", "Employees", "Settings", "Payments"];
+
+const MATRIX: Record<Role, Record<string, PermissionAction>> = {
+  SUPER_ADMIN: Object.fromEntries(MODULES.map((m) => [m, "FULL"])) as any,
+  ADMIN: {
+    Leads: "FULL", Conversion: "VIEW", ProfileCreation: "APPROVE", Profiles: "FULL",
+    Service: "ASSIGN", Employees: "FULL", Settings: "VIEW", Payments: "FULL",
+  },
+  SALES: { Leads: "EDIT", Conversion: "CREATE", Profiles: "VIEW" } as any,
+  PROFILE_CREATOR: { ProfileCreation: "CREATE", Profiles: "CREATE" } as any,
+  SERVICE: { Profiles: "VIEW", Service: "FULL" } as any,
+  HR: { Employees: "FULL" } as any,
+};
+
+async function main() {
+  for (const module of MODULES) {
+    for (const action of ["VIEW", "CREATE", "EDIT", "APPROVE", "ASSIGN", "FULL"] as PermissionAction[]) {
+      await prisma.permission.upsert({
+        where: { module_action: { module, action } },
+        update: {},
+        create: { module, action },
+      });
+    }
+  }
+
+  for (const [role, modules] of Object.entries(MATRIX)) {
+    for (const [module, action] of Object.entries(modules)) {
+      const perm = await prisma.permission.findUnique({ where: { module_action: { module, action: action as PermissionAction } } });
+      if (!perm) continue;
+      await prisma.rolePermission.upsert({
+        where: { role_permissionId: { role: role as Role, permissionId: perm.id } },
+        update: {},
+        create: { role: role as Role, permissionId: perm.id },
+      });
+    }
+  }
+  console.log("Permission matrix seeded.");
+}
+
+main().then(() => prisma.$disconnect());
+
+
+===== FILE: src\lib\permissions\can.ts =====
+import { prisma } from "@/lib/db/prisma";
+import type { Role, PermissionAction } from "@prisma/client";
+
+const RANK: Record<PermissionAction, number> = { VIEW: 1, CREATE: 2, EDIT: 3, ASSIGN: 3, APPROVE: 4, FULL: 5 };
+
+export async function can(role: Role, module: string, minAction: PermissionAction): Promise<boolean> {
+  const grants = await prisma.rolePermission.findMany({
+    where: { role, permission: { module } },
+    include: { permission: true },
+  });
+  return grants.some((g) => RANK[g.permission.action] >= RANK[minAction]);
+}
+
+===== FILE: src\lib\permissions\guard.ts =====
+import "server-only";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth/auth";
+import { canAccessRoute, type Role } from "@/lib/permissions/roles";
+
+const ROLE_ROUTE_MAP: Record<string, string> = {
+  SUPER_ADMIN: "admin",
+  ADMIN: "admin",
+  SALES: "sales",
+  SERVICE: "service",
+  PROFILE_CREATOR: "profile-creator",
+  HR: "hr",
+};
+
+export async function requireRole(path: string) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const role = session.user.role as Role;
+
+  if (!session.user.active) {
+    redirect("/login?error=inactive");
+  }
+
+  if (!canAccessRoute(role, path)) {
+    redirect(`/dashboard/${ROLE_ROUTE_MAP[role] ?? role.toLowerCase()}`);
+  }
+
+  return session;
+}
+
+
+===== FILE: src\lib\permissions\role-routes.ts =====
+export const ROLE_ROUTE_MAP: Record<string, string> = {
+  SUPER_ADMIN: "admin",
+  ADMIN: "admin",
+  SALES: "sales",
+  SERVICE: "service",
+  PROFILE_CREATOR: "profile-creator",
+  HR: "hr",
+};
+
+===== FILE: src\lib\permissions\roles.ts =====
+export const ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "PROFILE_CREATOR", "SERVICE", "HR"] as const;
+export type Role = (typeof ROLES)[number];
+
+export const ROUTE_ACCESS: Record<string, Role[]> = {
+  "/dashboard/admin/leads": ["SUPER_ADMIN", "ADMIN", "SALES"],
+  "/dashboard/admin/profiles": ["SUPER_ADMIN", "ADMIN", "SALES", "SERVICE"],
+  "/dashboard/admin/meetings": ["SUPER_ADMIN", "ADMIN", "SALES", "SERVICE"],
+  "/dashboard/admin": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/sales": ["SUPER_ADMIN", "ADMIN", "SALES"],
+  "/dashboard/service": ["SUPER_ADMIN", "ADMIN", "SERVICE"],
+  "/dashboard/profile-creator": ["SUPER_ADMIN", "ADMIN", "PROFILE_CREATOR"],
+  "/dashboard/hr": ["SUPER_ADMIN", "HR"],
+  "/dashboard/workspace": ["SUPER_ADMIN", "ADMIN", "SALES", "SERVICE", "PROFILE_CREATOR", "HR"],
+};
+
+export function canAccessRoute(role: Role, path: string): boolean {
+  const sortedKeys = Object.keys(ROUTE_ACCESS).sort((a, b) => b.length - a.length);
+  const matchedKey = sortedKeys.find((route) => path.startsWith(route));
+  if (!matchedKey) return false;
+  return ROUTE_ACCESS[matchedKey].includes(role);
+}
+
+
+===== MIGRATIONS mentioning role/permission =====
+--- migration: C:\Users\user\Elite Bandhan-crm\prisma\migrations\20260707075803_init\migration.sql ---
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'SALES', 'SERVICE');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" "Role" NOT NULL DEFAULT 'SALES',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "activity_logs" (
+    "id" TEXT NOT NULL,
+    "actorId" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "activity_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "users_role_idx" ON "users"("role");
+
+-- CreateIndex
+CREATE INDEX "users_email_idx" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "activity_logs_actorId_idx" ON "activity_logs"("actorId");
+
+-- CreateIndex
+CREATE INDEX "activity_logs_entityType_entityId_idx" ON "activity_logs"("entityType", "entityId");
+
+-- CreateIndex
+CREATE INDEX "activity_logs_createdAt_idx" ON "activity_logs"("createdAt");
+
+-- AddForeignKey
+ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+--- migration: C:\Users\user\Elite Bandhan-crm\prisma\migrations\20260711095628_add_role_permission_matrix\migration.sql ---
+-- CreateEnum
+CREATE TYPE "PermissionModule" AS ENUM ('USERS', 'PROFILES', 'LEADS', 'SERVICES', 'PAYMENTS', 'MEETINGS', 'CALL_LOGS', 'SALES_TARGETS');
+
+-- CreateEnum
+CREATE TYPE "PermissionAction" AS ENUM ('VIEW', 'CREATE', 'EDIT', 'APPROVE', 'ASSIGN', 'FULL');
+
+-- AlterEnum
+-- This migration adds more than one value to an enum.
+-- With PostgreSQL versions 11 and earlier, this is not possible
+-- in a single migration. This can be worked around by creating
+-- multiple migrations, each migration adding only one value to
+-- the enum.
+
+
+ALTER TYPE "Role" ADD VALUE 'SUPER_ADMIN';
+ALTER TYPE "Role" ADD VALUE 'PROFILE_CREATOR';
+ALTER TYPE "Role" ADD VALUE 'HR';
+
+-- CreateTable
+CREATE TABLE "permissions" (
+    "id" TEXT NOT NULL,
+    "module" "PermissionModule" NOT NULL,
+    "action" "PermissionAction" NOT NULL,
+
+    CONSTRAINT "permissions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "role_permissions" (
+    "id" TEXT NOT NULL,
+    "role" "Role" NOT NULL,
+    "permissionId" TEXT NOT NULL,
+
+    CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "permissions_module_action_key" ON "permissions"("module", "action");
+
+-- CreateIndex
+CREATE INDEX "role_permissions_role_idx" ON "role_permissions"("role");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "role_permissions_role_permissionId_key" ON "role_permissions"("role", "permissionId");
+
+-- AddForeignKey
+ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+--- migration: C:\Users\user\Elite Bandhan-crm\prisma\migrations\20260711100438_fix_permission_module_to_string\migration.sql ---
+/*
+  Warnings:
+
+  - Changed the type of `module` on the `permissions` table. No cast exists, the column would be dropped and recreated, which cannot be done if there is data, since the column is required.
+
+*/
+-- AlterTable
+ALTER TABLE "permissions" DROP COLUMN "module",
+ADD COLUMN     "module" TEXT NOT NULL;
+
+-- DropEnum
+DROP TYPE "PermissionModule";
+
+-- CreateIndex
+CREATE UNIQUE INDEX "permissions_module_action_key" ON "permissions"("module", "action");
+
+
+===== GREP: team/report/subordinate/manager call sites (with line numbers) =====
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\assignments\page.tsx:27:subtitle="See every profile and lead assigned across your team."
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\employees\new\page.tsx:10:subtitle="Create a new team member account."
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\employees\employees-table.tsx:130:emptyMessage="No employees yet. Add your first team member."
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\employees\page.tsx:15:subtitle="Manage your Sales, Service, and Admin team members."
+C:\Users\user\Elite Bandhan-crm\src\app\(dashboard)\dashboard\admin\leads\assign\page.tsx:23:subtitle="Bulk assign unassigned leads to your sales team."
+C:\Users\user\Elite Bandhan-crm\src\lib\ai\agents\brief.agent.ts:1:// Generates a structured search brief for the Service team to use manually
+C:\Users\user\Elite Bandhan-crm\src\lib\ai\agents\pitch.agent.ts:5:// (skip this candidate rather than showing broken text to the Service team).
+C:\Users\user\Elite Bandhan-crm\src\lib\ai\agents\pitch.agent.ts:21:const prompt = `You are helping a matchmaking service explain a match to their team, and draft a WhatsApp message to a client.
+C:\Users\user\Elite Bandhan-crm\src\lib\ai\agents\pitch.agent.ts:29:"reasoning": "2-3 sentence explanation of why this is a good match, written for an internal matchmaking team member",
+C:\Users\user\Elite Bandhan-crm\src\lib\ai\schemas\search-brief.ts:2:// are insufficient and the Service team needs to search Shaadi/Jeevansathi manually.
+C:\Users\user\Elite Bandhan-crm\src\lib\email\send-profile-email.ts:25:<p>Please contact your relationship manager for more details about this profile.</p>
+C:\Users\user\Elite Bandhan-crm\src\lib\email\send-profile-email.ts:28:Elite Bandhan Vivah &middot; This email was sent on your behalf by our Service team.

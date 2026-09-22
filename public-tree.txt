@@ -1,0 +1,21 @@
+Folder PATH listing
+Volume serial number is 000001FC E83E:B1BC
+C:\USERS\USER\Elite Bandhan-CRM\PUBLIC
+|   file.svg
+|   globe.svg
+|   next.svg
+|   vercel.svg
+|   window.svg
+|   
+\---uploads
+        5dfb0439-7f14-46d6-913a-fdbfe727a2de.jpg
+        663f95df-5813-4e07-80aa-953214afd7b4.JPG
+        76399226-d68d-45de-a5e7-a4acb00d8962.jpeg
+        7ccdd086-438f-43f6-8759-c30618ed3a52.JPG
+        8314512f-3f81-458f-99d8-abe2ac9615d2.avif
+        8dd844c2-a72a-4990-9ca1-68af3cf2b9b6.JPG
+        b4a5c36b-d8bb-4f75-b2de-6361dfcdc2e2.avif
+        c9b4ee17-9e1f-4fc4-bab7-7159a880e168.JPG
+        d97a5a86-643f-42a5-a3e3-c66b70d1f00b.jpg
+        e9ac7ccf-7296-46a1-ad6c-1bb853417da2.jpg
+        
