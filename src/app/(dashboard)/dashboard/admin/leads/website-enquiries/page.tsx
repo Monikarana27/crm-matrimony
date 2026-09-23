@@ -17,7 +17,17 @@ export default async function WebsiteEnquiriesPage() {
   const leads = await getLeads({ sourceStartsWith: "Website", unassignedOnly: true });
 
   const employees = await prisma.user.findMany({
-    where: { active: true, role: { in: ["SALES", "SALES_TL", "SALES_MANAGER"] } },
+    // Devender Kumar (SERVICE_MANAGER) has cross-access to the Sales side and
+        // should also appear as a lead assignee, even though his role isn't a SALES_*
+        // one — included by id rather than broadening the role filter, since that
+        // would also pull in other SERVICE_MANAGERs (e.g. Shahina Sheikh).
+        where: {
+          active: true,
+          OR: [
+            { role: { in: ["SALES", "SALES_TL", "SALES_MANAGER"] } },
+            { id: "cmtikr0sw0007l39ioxk0lgns" },
+          ],
+        },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });

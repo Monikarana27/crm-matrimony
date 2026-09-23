@@ -100,6 +100,7 @@ export function SubscriptionsTable({
     {
       key: "profile",
       header: "Profile",
+      accessor: (row) => `${row.profile.name} ${row.profile.profileCode}`,
       render: (row) => (
         <Link
           href={`/dashboard/admin/profiles/${row.profile.id}`}

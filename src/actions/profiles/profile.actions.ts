@@ -385,7 +385,7 @@ export async function assignProfileAction(profileId: string, employeeId: string)
   );
 
   await prisma.welcomeCall.updateMany({
-    where: { profileId, assignedToId: null },
+    where: { profileId, status: "PENDING" },
     data: { assignedToId: employeeId },
   });
 
@@ -418,7 +418,7 @@ export async function bulkAssignProfilesAction(profileIds: string[], employeeId:
   }
 
   await prisma.welcomeCall.updateMany({
-    where: { profileId: { in: profileIds }, assignedToId: null },
+    where: { profileId: { in: profileIds }, status: "PENDING" },
     data: { assignedToId: employeeId },
   });
 
