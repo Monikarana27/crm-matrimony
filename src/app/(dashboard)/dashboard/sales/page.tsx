@@ -91,6 +91,7 @@ export default async function SalesDashboardPage() {
         title={`Welcome back, ${session?.user?.name}`}
         subtitle="Track your leads, conversions, and follow-ups."
         variant={heroVariantForRole(session!.user.role)}
+        department="SALES"
       />
 
       <Card>

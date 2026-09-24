@@ -418,6 +418,7 @@ export const VISA_STATUS_OPTIONS = [
   "OCI (Overseas Citizen of India)",
   "PIO (Person of Indian Origin)",
   "Visitor / Tourist Visa",
+  "Temporary Visa",
   "Awaiting Visa",
   "Not Applicable",
   "Other",

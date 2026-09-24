@@ -1,3 +1,12 @@
+import { TrendingUp, Heart, Users, Shield } from "lucide-react";
+
+const DEPARTMENT_ICON = {
+  SALES: TrendingUp,
+  SERVICE: Heart,
+  HR: Users,
+  ADMIN: Shield,
+} as const;
+
 const VARIANT_STYLES = {
   default: {
     gradient: "from-primary via-primary to-[oklch(0.271_0.105_12.094)]",
@@ -23,12 +32,15 @@ export function DashboardHero({
   title,
   subtitle,
   variant = "default",
+  department,
 }: {
   title: string;
   subtitle: string;
   variant?: keyof typeof VARIANT_STYLES;
+  department?: keyof typeof DEPARTMENT_ICON;
 }) {
   const styles = VARIANT_STYLES[variant];
+  const Icon = department ? DEPARTMENT_ICON[department] : null;
 
   return (
     <div
@@ -36,6 +48,9 @@ export function DashboardHero({
     >
       <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/15 blur-3xl" />
       <div className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
+      {Icon && (
+        <Icon className="pointer-events-none absolute -right-6 -bottom-8 h-44 w-44 text-white/10" strokeWidth={1.2} />
+      )}
       <div className="relative">
         {styles.badge && (
           <span className="mb-3 inline-block rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">

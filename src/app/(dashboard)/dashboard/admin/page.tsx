@@ -325,6 +325,7 @@ export default async function AdminDashboardPage() {
       <DashboardHero
         title={`Welcome back, ${session?.user?.name}`}
         subtitle={`${todayLabel} · ${t.newLeadsToday} new leads · ${t.profilesCreatedToday} profiles created · ${t.meetingsToday} meetings today`}
+        department="ADMIN"
       />
 
       <section className="space-y-3">

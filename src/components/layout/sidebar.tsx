@@ -19,6 +19,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   SERVICE_MANAGER: "Service Manager",
   HR: "Human Resources",
   SYSTEM: "System",
+  SME: "Quality Oversight",
 };
 
 const COLLAPSE_STORAGE_KEY = "sidebar-collapsed";

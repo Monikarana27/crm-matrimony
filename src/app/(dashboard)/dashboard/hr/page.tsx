@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function HRDashboard() {
   return (
     <div className="space-y-6">
-      <DashboardHero title="HR Dashboard" subtitle="Employee management, attendance, recruitment, performance, payroll" />
+      <DashboardHero title="HR Dashboard" subtitle="Employee management, attendance, recruitment, performance, payroll" department="HR" />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Attendance", href: "/dashboard/hr/attendance" },

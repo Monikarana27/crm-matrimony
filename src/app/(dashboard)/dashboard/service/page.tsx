@@ -68,6 +68,7 @@ export default async function ServiceDashboardPage() {
         title={`Welcome back, ${session?.user?.name}`}
         subtitle="Here's your service activity for today."
         variant={heroVariantForRole(session!.user.role)}
+        department="SERVICE"
       />
 
       <WelcomeCallsHighlight summary={welcomeCalls} />

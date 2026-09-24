@@ -23,7 +23,7 @@ import {
   Search,
   UserCheck,
   History,
-  XCircle, BarChart3,
+  XCircle, BarChart3, Eye,
 } from "lucide-react";
 
 import type { Role } from "@/lib/permissions/roles";
@@ -169,6 +169,15 @@ export const NAV_CONFIG: Record<Role, NavItem[]> = {
     { label: "Discounts", href: "/dashboard/discounts", icon: Tag, section: "General" },
   ],
   SYSTEM: [],
+  SME: [
+    { label: "Dashboard", href: "/dashboard/sme", icon: LayoutDashboard, section: "Overview" },
+    { label: "Workspace", href: "/dashboard/workspace", icon: MessageSquare, section: "Overview" },
+    { label: "Non Connected Clients", href: "/dashboard/admin/non-connected-clients", icon: Eye, section: "Service Quality" },
+    { label: "Missed Weekly Shares", href: "/dashboard/admin/missed-weekly-shares", icon: HeartHandshake, section: "Service Quality" },
+    { label: "Overdue Welcome Calls", href: "/dashboard/admin/overdue-welcome-calls", icon: PhoneCall, section: "Service Quality" },
+    { label: "Profiles", href: "/dashboard/admin/profiles", icon: UserSquare2, section: "Profiles" },
+    { label: "Profile Search", href: "/dashboard/profile-search", icon: Search, section: "Profiles" },
+  ],
   HR: [
     { label: "Dashboard", href: "/dashboard/hr", icon: LayoutDashboard, section: "Overview" },
     { label: "Workspace", href: "/dashboard/workspace", icon: MessageSquare, section: "Overview" },

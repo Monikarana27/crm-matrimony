@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { EmployeeRowActions } from "./employee-row-actions";
 import { ViewAsButton } from "@/components/shared/view-as-button";
+import { EmployeeAvatar } from "@/components/shared/employee-avatar";
+import type { Role } from "@/lib/permissions/roles";
 
 type EmployeeRow = {
   id: string;
@@ -78,9 +80,12 @@ export function EmployeesTable({ employees }: { employees: EmployeeRow[] }) {
       header: "Name",
       sortable: true,
       render: (row) => (
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm font-medium">{row.name}</span>
-          <span className="text-xs text-muted-foreground">{row.email}</span>
+        <div className="flex items-center gap-2">
+          <EmployeeAvatar name={row.name} role={row.role as Role} className="h-8 w-8" />
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-medium">{row.name}</span>
+            <span className="text-xs text-muted-foreground">{row.email}</span>
+          </div>
         </div>
       ),
     },

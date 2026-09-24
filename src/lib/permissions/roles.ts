@@ -1,14 +1,14 @@
-﻿export const ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "PROFILE_CREATOR", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "HR", "SYSTEM"] as const;
+﻿export const ROLES = ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "PROFILE_CREATOR", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "HR", "SME", "SYSTEM"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/dashboard/admin/leads": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
-  "/dashboard/admin/subscriptions": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
+  "/dashboard/admin/subscriptions": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
   "/dashboard/admin/payments": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
-  "/dashboard/admin/missed-weekly-shares": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
-  "/dashboard/admin/non-connected-clients": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
-  "/dashboard/admin/overdue-welcome-calls": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
-  "/dashboard/admin/profiles": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "PROFILE_CREATOR"],
+  "/dashboard/admin/missed-weekly-shares": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
+  "/dashboard/admin/non-connected-clients": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
+  "/dashboard/admin/overdue-welcome-calls": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
+  "/dashboard/admin/profiles": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "PROFILE_CREATOR", "SME"],
   "/dashboard/admin/meetings": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
   "/dashboard/admin/attendance-report": ["SUPER_ADMIN", "ADMIN", "HR"],
   "/dashboard/admin/newly-paid-clients": ["SUPER_ADMIN", "ADMIN"],
@@ -19,10 +19,11 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/dashboard/service": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SALES_MANAGER"],
   "/dashboard/profile-creator": ["SUPER_ADMIN", "ADMIN", "PROFILE_CREATOR", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
   "/dashboard/hr": ["SUPER_ADMIN", "HR"],
-  "/dashboard/workspace": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "PROFILE_CREATOR", "HR"],
-  "/dashboard/welcome-calls": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
+  "/dashboard/workspace": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "PROFILE_CREATOR", "HR", "SME"],
+  "/dashboard/welcome-calls": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
   "/dashboard/discounts": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
-  "/dashboard/profile-search": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "PROFILE_CREATOR", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "HR"],
+  "/dashboard/sme": ["SUPER_ADMIN", "ADMIN", "SME"],
+  "/dashboard/profile-search": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "PROFILE_CREATOR", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "HR", "SME"],
 };
 
 /**

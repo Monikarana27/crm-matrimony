@@ -19,6 +19,7 @@ enum Role {
   SERVICE_TL
   SERVICE_MANAGER
   HR
+  SME
   SYSTEM
 }
 

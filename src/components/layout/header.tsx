@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EmployeeAvatar } from "@/components/shared/employee-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import { logoutAction } from "@/actions/auth/login.action";
 import { LogOut, User } from "lucide-react";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { ScrollHeaderShell } from "@/components/layout/scroll-header-shell";
 import { AttendanceWidget } from "@/components/layout/attendance-widget";
 import { getMyTodayAttendance } from "@/actions/attendance/attendance.actions";
 import type { Role } from "@/lib/permissions/roles";
@@ -34,7 +36,7 @@ export async function Header({ role }: { role: Role }) {
     .slice(0, 2)
     .toUpperCase();
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/60 bg-background/80 backdrop-blur px-6">
+    <ScrollHeaderShell>
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
           EB
@@ -56,11 +58,7 @@ export async function Header({ role }: { role: Role }) {
               {ROLE_LABEL[role] ?? role}
             </Badge>
           </div>
-          <Avatar className="h-9 w-9 border">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <EmployeeAvatar name={name} role={userRole as Role} className="h-9 w-9 border" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuLabel className="text-xs text-muted-foreground">
@@ -83,6 +81,6 @@ export async function Header({ role }: { role: Role }) {
         </DropdownMenuContent>
       </DropdownMenu>
       </div>
-    </header>
+    </ScrollHeaderShell>
   );
 }

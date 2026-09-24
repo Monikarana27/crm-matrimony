@@ -57,7 +57,7 @@ export function AttendanceWidget({ attendance }: { attendance: Attendance }) {
     return (
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-200">
-          Working since {fmt(attendance.checkIn)}
+          Clocked in at {fmt(attendance.checkIn)}
         </Badge>
         <DayCountdown checkIn={attendance.checkIn} breakStart={attendance.breakStart} breakEnd={attendance.breakEnd} />
         <Button size="sm" variant="outline" disabled={isPending} onClick={() => run(startBreakAction)}>
