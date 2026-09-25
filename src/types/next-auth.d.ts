@@ -5,6 +5,7 @@ declare module "next-auth" {
   interface User {
     role: Role;
     active: boolean;
+    isSME?: boolean;
     accountType?: "staff" | "client";
     profileId?: string;
     extraModules?: string[];
@@ -14,6 +15,7 @@ declare module "next-auth" {
       id: string;
       role: Role;
       active: boolean;
+      isSME?: boolean;
       impersonating?: boolean;
       originalUserId?: string;
       originalUserName?: string;
@@ -28,6 +30,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     role: Role;
     active: boolean;
+    isSME?: boolean;
     impersonating?: boolean;
     originalUserId?: string;
     originalUserName?: string;

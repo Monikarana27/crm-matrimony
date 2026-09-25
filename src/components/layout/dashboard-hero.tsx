@@ -33,11 +33,13 @@ export function DashboardHero({
   subtitle,
   variant = "default",
   department,
+  extraBadge,
 }: {
   title: string;
   subtitle: string;
   variant?: keyof typeof VARIANT_STYLES;
   department?: keyof typeof DEPARTMENT_ICON;
+  extraBadge?: string;
 }) {
   const styles = VARIANT_STYLES[variant];
   const Icon = department ? DEPARTMENT_ICON[department] : null;
@@ -52,10 +54,19 @@ export function DashboardHero({
         <Icon className="pointer-events-none absolute -right-6 -bottom-8 h-44 w-44 text-white/10" strokeWidth={1.2} />
       )}
       <div className="relative">
-        {styles.badge && (
-          <span className="mb-3 inline-block rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-            {styles.badge}
-          </span>
+        {(styles.badge || extraBadge) && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {styles.badge && (
+              <span className="inline-block rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+                {styles.badge}
+              </span>
+            )}
+            {extraBadge && (
+              <span className="inline-block rounded-full border border-violet-300/50 bg-violet-500/25 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+                {extraBadge}
+              </span>
+            )}
+          </div>
         )}
         <h1 className="font-display text-3xl font-semibold tracking-tight text-primary-foreground">
           {title}

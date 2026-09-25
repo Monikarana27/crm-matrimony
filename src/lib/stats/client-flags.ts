@@ -17,10 +17,13 @@ async function requireStaff() {
 // A client counts as "Non Connected" if there has been no activity —
 // no ProfileRemark on their own profile, and no ProfileShareComment on
 // any candidate profile shared with them — in the last 2 days.
-export async function getNonConnectedClients() {
+export async function getNonConnectedClients(options?: { assignedToId?: string }) {
   const session = await requireStaff();
-  const scopedFilter = !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)
+  const isPrivileged = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role) || !!session.user.isSME;
+  const scopedFilter = !isPrivileged
     ? { profile: { assignedToId: session.user.id } }
+    : options?.assignedToId
+    ? { profile: { assignedToId: options.assignedToId } }
     : {};
   const twoDaysAgo = new Date(Date.now() - TWO_DAYS_MS);
 
@@ -90,10 +93,13 @@ export async function getNonConnectedClients() {
 // A client counts as a "missed weekly share" if their subscription has
 // been active for at least 7 days and no ProfileShare has been created
 // for them in the last 7 days.
-export async function getMissedWeeklyShares() {
+export async function getMissedWeeklyShares(options?: { assignedToId?: string }) {
   const session = await requireStaff();
-  const scopedFilter = !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)
+  const isPrivileged = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role) || !!session.user.isSME;
+  const scopedFilter = !isPrivileged
     ? { profile: { assignedToId: session.user.id } }
+    : options?.assignedToId
+    ? { profile: { assignedToId: options.assignedToId } }
     : {};
   const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS);
 
@@ -152,10 +158,13 @@ export async function getMissedWeeklyShares() {
 
 // A welcome call counts as overdue if it's still PENDING more than 24 hours
 // after it was created/assigned.
-export async function getOverdueWelcomeCalls(options?: { department?: "SALES" | "SERVICE" }) {
+export async function getOverdueWelcomeCalls(options?: { department?: "SALES" | "SERVICE"; assignedToId?: string }) {
   const session = await requireStaff();
-  const scopedFilter = !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)
+  const isPrivileged = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role) || !!session.user.isSME;
+  const scopedFilter = !isPrivileged
     ? { assignedToId: session.user.id }
+    : options?.assignedToId
+    ? { assignedToId: options.assignedToId }
     : {};
   const departmentFilter: Prisma.WelcomeCallWhereInput =
     options?.department === "SERVICE"

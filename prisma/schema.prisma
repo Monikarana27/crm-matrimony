@@ -39,6 +39,7 @@ model User {
   department Department?
   role       Role        @default(SALES)
   active     Boolean     @default(true)
+  isSME      Boolean     @default(false)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -58,6 +59,11 @@ model User {
   salesTargets                  SalesTarget[]
   leadRemarks                   LeadRemark[]
   subscriptionComments           SubscriptionComment[]
+  smeFollowUpsAsEmployee         SmeFollowUp[]                 @relation("SmeFollowUpEmployee")
+  smeFollowUpsCreated            SmeFollowUp[]                 @relation("SmeFollowUpCreatedBy")
+  smeFollowUpsResolved           SmeFollowUp[]                 @relation("SmeFollowUpResolvedBy")
+  smeReviewsReceived             SmeClientReview[]             @relation("SmeClientReviewEmployee")
+  smeReviewsGiven                SmeClientReview[]             @relation("SmeClientReviewReviewer")
   achievements                  Achievement[]
   attendance                    Attendance[]
   leaveRequests                 LeaveRequest[]
@@ -236,6 +242,7 @@ model Profile {
   meetingsAsSecond Meeting[] @relation("MeetingProfileTwo")
 
   profileShares ProfileShare[]
+  smeFollowUps  SmeFollowUp[] @relation("SmeFollowUpClient")
 
   photoUrl String?
 
@@ -460,6 +467,7 @@ model Subscription {
   successStories SuccessStory[]
   stageHistory   ServiceStageHistory[]
   comments       SubscriptionComment[]
+  smeReviews     SmeClientReview[]
 
   @@index([status])
   @@index([profileId])
@@ -490,6 +498,45 @@ model SubscriptionComment {
 
   @@index([subscriptionId])
   @@map("subscription_comments")
+}
+
+model SmeFollowUp {
+  id              String    @id @default(cuid())
+  employeeId      String
+  employee        User      @relation("SmeFollowUpEmployee", fields: [employeeId], references: [id])
+  clientProfileId String?
+  clientProfile   Profile?  @relation("SmeFollowUpClient", fields: [clientProfileId], references: [id])
+  createdById     String
+  createdBy       User      @relation("SmeFollowUpCreatedBy", fields: [createdById], references: [id])
+  note            String    @db.Text
+  followUpDate    DateTime?
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?     @relation("SmeFollowUpResolvedBy", fields: [resolvedById], references: [id])
+  createdAt       DateTime  @default(now())
+
+  @@index([employeeId])
+  @@index([clientProfileId])
+  @@map("sme_follow_ups")
+}
+
+/// One row per SME call to a client. Append-only: re-calling adds a row;
+/// "current" rating for a subscription = its latest row.
+model SmeClientReview {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  employeeId     String
+  employee       User         @relation("SmeClientReviewEmployee", fields: [employeeId], references: [id])
+  reviewerId     String
+  reviewer       User         @relation("SmeClientReviewReviewer", fields: [reviewerId], references: [id])
+  rating         Int
+  feedback       String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@index([employeeId, createdAt])
+  @@map("sme_client_reviews")
 }
 
 enum PaymentStatus {
@@ -948,6 +995,8 @@ enum NotificationType {
   IMPORTANT_ANNOUNCEMENT
   LEAD_FOLLOWUP
   WELCOME_CALL_OVERDUE
+  SME_FOLLOWUP
+  SME_FOLLOWUP_DONE
 }
 
 model Notification {

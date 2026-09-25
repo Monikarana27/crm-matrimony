@@ -35,7 +35,7 @@ export async function DashboardShell({
         <ImpersonationBanner originalUserName={session.user.originalUserName} />
       )}
       <div className="flex flex-1">
-        <Sidebar role={role} extraModules={extraModules} userName={session?.user?.name ?? undefined} />
+        <Sidebar role={role} extraModules={extraModules} userName={session?.user?.name ?? undefined} isSME={!!session?.user?.isSME} />
         <div className="flex flex-1 flex-col min-w-0">
           <Header role={role} />
           <main className="flex-1 bg-muted/30 p-6">

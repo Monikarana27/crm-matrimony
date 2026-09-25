@@ -41,10 +41,12 @@ export function Sidebar({
   role,
   extraModules = [],
   userName,
+  isSME = false,
 }: {
   role: Role;
   extraModules?: string[];
   userName?: string;
+  isSME?: boolean;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -85,8 +87,11 @@ export function Sidebar({
     >
       <div className="flex items-center justify-between px-4 pb-2 pt-6">
         {!collapsed && (
-          <p className="px-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+          <p className="flex items-center gap-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
             {ROLE_LABEL[role]}
+            {isSME && (
+              <span className="rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold text-violet-300">SME</span>
+            )}
           </p>
         )}
         <button
@@ -160,7 +165,12 @@ export function Sidebar({
             {!collapsed && (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-sidebar-foreground">{userName}</p>
-                <p className="truncate text-xs text-sidebar-foreground/55">{ROLE_LABEL[role]}</p>
+                <p className="flex items-center gap-1.5 truncate text-xs text-sidebar-foreground/55">
+                  {ROLE_LABEL[role]}
+                  {isSME && (
+                    <span className="shrink-0 rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold text-violet-300">SME</span>
+                  )}
+                </p>
               </div>
             )}
           </div>

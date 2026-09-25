@@ -35,6 +35,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.role = user.role;
         token.active = user.active;
+        token.isSME = user.isSME ?? false;
         token.extraModules = user.extraModules ?? [];
       }
       if (trigger === "update" && session) {
@@ -47,6 +48,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.sub as string;
         session.user.role = token.role as Role;
         session.user.active = token.active as boolean;
+        session.user.isSME = token.isSME as boolean | undefined;
         session.user.impersonating = token.impersonating as boolean | undefined;
         session.user.originalUserId = token.originalUserId as string | undefined;
         session.user.originalUserName = token.originalUserName as string | undefined;

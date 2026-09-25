@@ -5,6 +5,15 @@ import { DashboardHero, heroVariantForRole } from "@/components/layout/dashboard
 import { getServiceStats, getTeamServiceStats } from "@/lib/stats/dashboard-stats";
 import { getMyTarget, getTeamSalesTargetsForMonth } from "@/actions/sales-targets/sales-target.actions";
 import { getTeamMemberIds } from "@/lib/hierarchy/team";
+import { getServiceQualityRollup } from "@/lib/stats/sme-rollup";
+import { getServiceFeedbackFeed, getActiveServiceEmployees } from "@/lib/stats/sme-feedback";
+import { DashboardTabs } from "@/components/layout/dashboard-tabs";
+import { SmeQualityView } from "@/components/sme/sme-quality-view";
+import { SmeFeedbackFeed } from "@/components/sme/sme-feedback-feed";
+import { SmeFollowUpTab } from "@/components/sme/sme-follow-up-tab";
+import { SmeClientCallsTab } from "@/components/sme/sme-client-calls-tab";
+import { MyFollowUps } from "@/components/sme/my-follow-ups";
+import { MyRating } from "@/components/sme/my-rating";
 import { getServiceWelcomeCallSummary } from "@/lib/stats/welcome-call-summary";
 import { WelcomeCallsHighlight } from "@/components/widgets/welcome-calls-highlight";
 import { SalesTargetsGrid } from "@/components/shared/sales-targets-grid";
@@ -62,13 +71,14 @@ export default async function ServiceDashboardPage() {
     teamTargets = await getTeamSalesTargetsForMonth(currentMonth, currentYear);
   }
 
-  return (
+  const myTeamContent = (
     <div className="space-y-6">
       <DashboardHero
         title={`Welcome back, ${session?.user?.name}`}
         subtitle="Here's your service activity for today."
         variant={heroVariantForRole(session!.user.role)}
         department="SERVICE"
+        extraBadge={session!.user.isSME ? "+SME" : undefined}
       />
 
       <WelcomeCallsHighlight summary={welcomeCalls} />
@@ -301,5 +311,40 @@ export default async function ServiceDashboardPage() {
         </div>
       )}
     </div>
+  );
+
+  const withFollowUps = (
+    <>
+      <MyRating />
+      <MyFollowUps />
+      {myTeamContent}
+    </>
+  );
+
+  if (!session!.user.isSME) {
+    return withFollowUps;
+  }
+
+  const ownTeamSet = new Set([session!.user.id, ...teamIds]);
+  const [rollupRows, { feed }, smeEmployees] = await Promise.all([
+    getServiceQualityRollup(),
+    getServiceFeedbackFeed(),
+    getActiveServiceEmployees(),
+  ]);
+  const qualityRows = rollupRows.map((r) => ({
+    ...r,
+    isOwnTeam: ownTeamSet.has(r.employeeId),
+  }));
+
+  return (
+    <DashboardTabs
+      tabs={[
+        { label: "My Team", content: withFollowUps },
+        { label: "Org-Wide Quality", content: <SmeQualityView rows={qualityRows} /> },
+        { label: "Client Feedback", content: <SmeFeedbackFeed feed={feed} employees={smeEmployees} /> },
+        { label: "Follow-ups", content: <SmeFollowUpTab /> },
+        { label: "Client Calls", content: <SmeClientCallsTab /> },
+      ]}
+    />
   );
 }

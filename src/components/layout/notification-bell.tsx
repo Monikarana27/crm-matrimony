@@ -38,6 +38,7 @@ function buildEntityLink(role: string, entityType: string | null, entityId: stri
       ? `/dashboard/admin/leads/${entityId}`
       : `/dashboard/sales/leads/${entityId}`;
   }
+  if (entityType === "SME_FOLLOWUP") return "/dashboard/service";
   if (entityType === "PROFILE") {
     if (["ADMIN", "SUPER_ADMIN"].includes(role)) return `/dashboard/admin/profiles/${entityId}`;
     if (role.startsWith("SERVICE")) return `/dashboard/service/profiles/${entityId}`;
