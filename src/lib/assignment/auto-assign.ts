@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/db/prisma";
 import type { Role } from "@/lib/permissions/roles";
+import { startOfTodayIST } from "@/lib/utils/date-boundaries";
 
 async function getEligibleEmployees(roles: Role[]) {
   const now = new Date();
 
   const onLeaveIds = await prisma.leaveRequest.findMany({
-    where: { status: "APPROVED", startDate: { lte: now }, endDate: { gte: now } },
+    where: { status: "APPROVED", startDate: { lte: now }, endDate: { gte: startOfTodayIST() } },
     select: { userId: true },
   });
   const onLeaveSet = new Set(onLeaveIds.map((l) => l.userId));

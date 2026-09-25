@@ -1,3 +1,4 @@
+import { startOfTodayIST } from "@/lib/utils/date-boundaries";
 ﻿import { prisma } from "@/lib/db/prisma";
 
 type IdFilter = string | { in: string[] };
@@ -607,7 +608,7 @@ export async function getOwnerSummary() {
     prisma.profileShare.count({ where: { sharedAt: { gte: todayStart, lte: todayEnd } } }),
     prisma.payment.count({ where: { status: "PENDING" } }),
     prisma.subscription.count({
-      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: now, lte: sevenDaysOut } },
+      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: startOfTodayIST(), lte: sevenDaysOut } },
     }),
     prisma.successStory.count({ where: { closedAt: { gte: monthStart } } }),
   ]);
@@ -648,10 +649,10 @@ export async function getServiceOverview() {
     prisma.subscription.count({ where: { profile: { deletedAt: null }, serviceStage: "FAMILY_DISCUSSION" } }),
     prisma.subscription.count({ where: { profile: { deletedAt: null }, serviceStage: "SUCCESS_CLOSED" } }),
     prisma.subscription.count({
-      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: now, lte: sevenDaysOut } },
+      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: startOfTodayIST(), lte: sevenDaysOut } },
     }),
     prisma.subscription.count({
-      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: now, lte: thirtyDaysOut } },
+      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: startOfTodayIST(), lte: thirtyDaysOut } },
     }),
     prisma.subscription.count({ where: { profile: { deletedAt: null }, status: "EXPIRED" } }),
   ]);
@@ -775,7 +776,7 @@ export async function getServiceNeedsAttention() {
 
   const [expiringSoon, onHold, pendingPayments, overdueWelcomeCalls] = await Promise.all([
     prisma.subscription.count({
-      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: now, lte: sevenDaysOut } },
+      where: { profile: { deletedAt: null }, status: "ACTIVE", endDate: { gte: startOfTodayIST(), lte: sevenDaysOut } },
     }),
     prisma.subscription.count({ where: { profile: { deletedAt: null }, status: "HOLD" } }),
     prisma.payment.count({ where: { status: "PENDING", subscription: { profile: { deletedAt: null } } } }),

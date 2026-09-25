@@ -1,6 +1,7 @@
 "use server";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
+import { startOfTodayIST } from "@/lib/utils/date-boundaries";
 
 export async function getExpiringSubscriptions(daysAhead: number) {
   const session = await auth();
@@ -14,7 +15,7 @@ export async function getExpiringSubscriptions(daysAhead: number) {
   return prisma.subscription.findMany({
     where: {
       status: "ACTIVE",
-      endDate: { gte: now, lte: cutoff },
+      endDate: { gte: startOfTodayIST(), lte: cutoff },
       ...(isScopedRole
         ? { profile: { assignedToId: session.user.id } }
         : {}),
