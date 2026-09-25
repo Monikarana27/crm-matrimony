@@ -64,6 +64,9 @@ model User {
   smeFollowUpsResolved           SmeFollowUp[]                 @relation("SmeFollowUpResolvedBy")
   smeReviewsReceived             SmeClientReview[]             @relation("SmeClientReviewEmployee")
   smeReviewsGiven                SmeClientReview[]             @relation("SmeClientReviewReviewer")
+  ppRequestsSubmitted            PPValidationRequest[]         @relation("PPValidationSubmittedBy")
+  ppRequestsAssigned             PPValidationRequest[]         @relation("PPValidationAssignedEmployee")
+  ppReviewsGiven                 PPValidationReview[]          @relation("PPValidationReviewer")
   achievements                  Achievement[]
   attendance                    Attendance[]
   leaveRequests                 LeaveRequest[]
@@ -260,6 +263,7 @@ model Profile {
   deletedById String?
 
   partnerPreference PartnerPreference?
+  ppValidationRequest PPValidationRequest?
   subscriptions     Subscription[]
   assignmentHistory ProfileAssignmentHistory[]
   callLogs          CallLog[]
@@ -400,12 +404,115 @@ model Lead {
   remarks      LeadRemark[]
   profileQueue ProfileQueue?
   welcomeCalls WelcomeCall[]
+  ppValidationRequests PPValidationRequest[]
 
   @@index([status])
   @@index([assignedToId])
   @@index([phone])
   @@index([deletedAt])
   @@map("leads")
+}
+
+enum PPValidationStatus {
+  PENDING
+  APPROVED
+  NEEDS_REVISION
+}
+
+/// Sales submits a client's requirements for Maya (SME) to validate before
+/// (usually) or after the sale — replaces the old email-based PP process.
+model PPValidationRequest {
+  id String @id @default(cuid())
+
+  // Client + sale snapshot, captured at submission time (not a live link —
+  // a Lead/Profile may not exist yet when this is submitted).
+  clientName     String
+  clientGender   Gender?
+  clientPhone    String
+  clientEmail    String?
+  clientLocation String?
+  packageDetails String?
+  amount         String?
+  paymentMode    String?
+
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  // Set once approval creates (or links) a real Profile.
+  profileId String?  @unique
+  profile   Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  // Criteria — same shape as PartnerPreference's multi-select fields, so an
+  // approval can be written straight into a real PartnerPreference row.
+  minAge    Int?
+  maxAge    Int?
+  minHeight String?
+  maxHeight String?
+
+  maritalStatusMulti String[] @default([])
+  motherTongueIds    String[] @default([])
+  religionIds        String[] @default([])
+  casteIds           String[] @default([])
+  manglikStatusMulti String[] @default([])
+  hasChildrenOkMulti String[] @default([])
+
+  countryMulti String[] @default([])
+  stateMulti   String[] @default([])
+  cityMulti    String[] @default([])
+
+  qualificationMulti String[] @default([])
+  professionMulti    String[] @default([])
+
+  annualIncomeCurrency String?
+  annualIncomeRanges   String[] @default([])
+
+  dietMulti     String[] @default([])
+  drinkingMulti String[] @default([])
+  smokingMulti  String[] @default([])
+
+  aboutDesiredPartner String? @db.Text
+  /// Free-text for logic that doesn't fit clean fields (nested community
+  /// preferences, horoscope conditions, etc.)
+  notes String? @db.Text
+
+  status PPValidationStatus @default(PENDING)
+
+  submittedById String
+  submittedBy   User   @relation("PPValidationSubmittedBy", fields: [submittedById], references: [id])
+
+  /// RM assigned on approval.
+  assignedEmployeeId String?
+  assignedEmployee   User?   @relation("PPValidationAssignedEmployee", fields: [assignedEmployeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews PPValidationReview[]
+
+  @@index([status])
+  @@index([submittedById])
+  @@map("pp_validation_requests")
+}
+
+/// Append-only: each SME action on a request (search + decision) is a new
+/// row, so a revise-and-resubmit cycle stays one visible thread.
+model PPValidationReview {
+  id        String              @id @default(cuid())
+  requestId String
+  request   PPValidationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  reviewerId String
+  reviewer   User   @relation("PPValidationReviewer", fields: [reviewerId], references: [id])
+
+  decision            PPValidationStatus
+  matchesFound         Int?
+  matchedProfileCodes String[] @default([])
+  note                String?  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@map("pp_validation_reviews")
 }
 
 enum SubscriptionStatus {
