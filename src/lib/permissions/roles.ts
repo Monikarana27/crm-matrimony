@@ -9,6 +9,8 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/dashboard/admin/non-connected-clients": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
   "/dashboard/admin/overdue-welcome-calls": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "SME"],
   "/dashboard/admin/profiles": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER", "PROFILE_CREATOR", "SME"],
+  "/dashboard/admin/pp-validation": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/sales/pp-validation": ["SALES", "SALES_TL", "SALES_MANAGER", "SERVICE_MANAGER"],
   "/dashboard/admin/meetings": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
   "/dashboard/admin/attendance-report": ["SUPER_ADMIN", "ADMIN", "HR"],
   "/dashboard/admin/newly-paid-clients": ["SUPER_ADMIN", "ADMIN"],
