@@ -96,7 +96,12 @@ export async function getLeads(filter?: {
     ? { source: { startsWith: filter.sourceStartsWith } }
     : {};
 
-  const unassignedFilter = filter?.unassignedOnly ? { assignedToId: null } : {};
+  // For Website Enquiries: stay visible for 24h after assignment too, not just while unassigned,
+  // so a just-assigned enquiry doesn't vanish from the list the instant it's picked up.
+  const assignmentGraceCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const unassignedFilter = filter?.unassignedOnly
+    ? { AND: [{ OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }] }] }
+    : {};
 
   // Not Interested leads are visible to admins only.
   const isAdminRole = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
@@ -116,6 +121,52 @@ export async function getLeads(filter?: {
         select: { remark: true, outcome: true, createdAt: true },
       },
     },
+  });
+}
+
+/** Count for the Website Enquiries badge: unassigned, or assigned within the last 24h. */
+export async function getWebsiteEnquiryCount(): Promise<number> {
+  const session = await requireStaff();
+  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
+
+  const assignmentGraceCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return prisma.lead.count({
+    where: {
+      deletedAt: null,
+      source: { startsWith: "Website" },
+      OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }],
+    },
+  });
+}
+
+/** Count for the second "unseen new leads" badge: per-admin, cleared when they open the page. */
+export async function getUnseenWebsiteLeadsCount(): Promise<number> {
+  const session = await requireStaff();
+  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { websiteLeadsLastViewedAt: true, createdAt: true },
+  });
+  const since = user?.websiteLeadsLastViewedAt ?? user?.createdAt ?? new Date(0);
+
+  return prisma.lead.count({
+    where: {
+      deletedAt: null,
+      source: { startsWith: "Website" },
+      createdAt: { gt: since },
+    },
+  });
+}
+
+/** Marks all current website leads as seen for this admin (resets the unseen badge to 0). */
+export async function markWebsiteLeadsSeenAction(): Promise<void> {
+  const session = await requireStaff();
+  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return;
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { websiteLeadsLastViewedAt: new Date() },
   });
 }
 
@@ -482,6 +533,11 @@ async function requireAdmin() {
 
 export async function deleteLeadAction(id: string) {
   const session = await requireAdmin();
+
+  const target = await prisma.lead.findUnique({ where: { id }, select: { source: true } });
+  if (target?.source?.startsWith("Website")) {
+    return { error: "Website-sourced leads can't be deleted, to protect lead-analytics attribution." };
+  }
 
   // Soft-delete the lead and remove its welcome calls (logs cascade).
   await prisma.$transaction([

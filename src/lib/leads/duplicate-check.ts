@@ -16,15 +16,22 @@ function lastTenDigits(phone: string) {
 // Finds a live lead whose phone has the same last 10 digits, whatever the formatting.
 export async function findExistingLeadByPhone(phone: string, excludeId?: string) {
   const key = lastTenDigits(phone);
+  // A soft-deleted lead still counts as a match if it was Website-sourced — otherwise
+  // someone could delete the true Website enquiry and recreate the same number under a
+  // different (fake) source, corrupting lead-analytics attribution.
   if (key.length < 10) {
     return prisma.lead.findFirst({
-      where: { phone, deletedAt: null, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+      where: {
+        phone,
+        OR: [{ deletedAt: null }, { source: { startsWith: "Website" } }],
+        ...(excludeId ? { NOT: { id: excludeId } } : {}),
+      },
       include: { assignedTo: { select: { name: true } } },
     });
   }
   const rows = await prisma.$queryRaw<{ id: string }[]>`
     SELECT "id" FROM "leads"
-    WHERE "deletedAt" IS NULL
+    WHERE ("deletedAt" IS NULL OR "source" LIKE 'Website%')
       AND RIGHT(REGEXP_REPLACE("phone", '[^0-9]', '', 'g'), 10) = ${key}
     LIMIT 20`;
   const hit = rows.find((r) => r.id !== excludeId);

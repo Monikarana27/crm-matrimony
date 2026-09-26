@@ -1,4 +1,4 @@
-import { getLeads } from "@/actions/leads/lead.actions";
+import { getLeads, markWebsiteLeadsSeenAction } from "@/actions/leads/lead.actions";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
@@ -13,6 +13,9 @@ export default async function WebsiteEnquiriesPage() {
   if (!canAssign) {
     redirect("/dashboard");
   }
+
+  // Mark seen as part of rendering this page — clears the per-admin unseen badge.
+  await markWebsiteLeadsSeenAction();
 
   const leads = await getLeads({ sourceStartsWith: "Website", unassignedOnly: true });
 

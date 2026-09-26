@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLeads } from "@/actions/leads/lead.actions";
+import { getLeads, getWebsiteEnquiryCount, getUnseenWebsiteLeadsCount } from "@/actions/leads/lead.actions";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { DashboardHero } from "@/components/layout/dashboard-hero";
@@ -42,6 +42,8 @@ export default async function LeadsPage({
     ...(followUpToday ? { followUpToday: true } : {}),
     ...(createdToday ? { createdToday: true } : {}),
   });
+  const websiteEnquiryCount = canAssign ? await getWebsiteEnquiryCount() : 0;
+  const unseenWebsiteLeadsCount = canAssign ? await getUnseenWebsiteLeadsCount() : 0;
   const employees = canAssign
     ? await prisma.user.findMany({
         // Devender Kumar (SERVICE_MANAGER) has cross-access to the Sales side and
@@ -103,10 +105,18 @@ export default async function LeadsPage({
         </div>
         {canAssign && (
           <div className="flex gap-2">
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="relative">
               <Link href="/dashboard/admin/leads/website-enquiries">
                 <Globe className="mr-2 h-4 w-4" />
                 Website Enquiries
+                {websiteEnquiryCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
+                    {websiteEnquiryCount}
+                  </span>
+                )}
+                {unseenWebsiteLeadsCount > 0 && (
+                  <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-background" />
+                )}
               </Link>
             </Button>
             <Button asChild>
