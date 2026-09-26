@@ -16,14 +16,27 @@ function startOfTodayIST(): Date {
 
 async function main() {
   const cutoff = startOfTodayIST();
-  const result = await prisma.subscription.updateMany({
+
+  // Activate any PENDING (scheduled-future, from a stacked renewal) subscription
+  // whose startDate has arrived. Runs in the same pass, same cutoff, as the
+  // expiry below, so a client's old subscription expiring and their pre-paid
+  // renewal activating always land on the same day — never drifts apart.
+  const activated = await prisma.subscription.updateMany({
+    where: { status: "PENDING", startDate: { not: null, lte: cutoff } },
+    data: { status: "ACTIVE" },
+  });
+
+  const expired = await prisma.subscription.updateMany({
     where: {
       status: "ACTIVE",
       endDate: { not: null, lt: cutoff },
     },
     data: { status: "EXPIRED" },
   });
-  console.log(`[${new Date().toISOString()}] Marked ${result.count} subscriptions as EXPIRED (cutoff ${cutoff.toISOString()}).`);
+
+  console.log(
+    `[${new Date().toISOString()}] Activated ${activated.count} scheduled subscriptions, marked ${expired.count} as EXPIRED (cutoff ${cutoff.toISOString()}).`
+  );
   await prisma.$disconnect();
 }
 

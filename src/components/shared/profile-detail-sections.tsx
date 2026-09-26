@@ -12,11 +12,22 @@ export function Row({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
   return (
     <Card>
       <CardContent className="pt-6">
-        <h3 className="mb-4 text-sm font-semibold text-muted-foreground">{title}</h3>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
+          {action}
+        </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">{children}</div>
       </CardContent>
     </Card>
@@ -144,6 +155,7 @@ export async function ProfileDetailSections({ profile }: { profile: any }) {
           <Row label="Diet" value={joinList(pp.dietMulti)} />
           <Row label="Drinking" value={joinList(pp.drinkingMulti)} />
           <Row label="Smoking" value={joinList(pp.smokingMulti)} />
+          <Row label="Visa Status" value={joinList(pp.visaStatusMulti)} />
           <Row label="About Desired Partner" value={pp.aboutDesiredPartner} />
         </Section>
       )}

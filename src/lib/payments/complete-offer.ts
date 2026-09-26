@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { upsertAchievementForPayment } from "@/lib/achievements/sync-achievement";
+import { computeRenewalWindow } from "@/lib/subscriptions/renewal";
 
 export async function completeOfferPayment(params: {
   offerId: string;
@@ -14,16 +15,27 @@ export async function completeOfferPayment(params: {
   if (offer.status === "PAID") return { success: true, alreadyPaid: true };
 
   await prisma.$transaction(async (tx) => {
-    let subscription = await tx.subscription.findFirst({
-      where: { profileId: offer.profileId, status: "ACTIVE" },
-      orderBy: { createdAt: "desc" },
-    });
+    // Always create a fresh subscription for this payment, using the same
+    // stacking rule as manual renewals: if the client already has a running
+    // ACTIVE subscription, this new one is scheduled to start the day after
+    // it ends (status PENDING) rather than silently attaching this payment
+    // to the existing row and leaving the expiry date untouched.
+    const { startDate, endDate, status } = await computeRenewalWindow(
+      tx,
+      offer.profileId,
+      offer.plan.durationDays
+    );
 
-    if (!subscription) {
-      subscription = await tx.subscription.create({
-        data: { profileId: offer.profileId, planId: offer.planId, status: "ACTIVE" },
-      });
-    }
+    const subscription = await tx.subscription.create({
+      data: {
+        profileId: offer.profileId,
+        planId: offer.planId,
+        status,
+        startDate,
+        endDate,
+        createdById: offer.createdById,
+      },
+    });
 
     const paidAt = new Date();
     const payment = await tx.payment.create({

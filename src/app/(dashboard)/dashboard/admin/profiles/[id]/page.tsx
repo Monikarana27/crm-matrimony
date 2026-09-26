@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { getProfileById } from "@/actions/profiles/profile.actions";
 import { SharedProfilesTable } from "@/components/shared/shared-profiles-table";
-import { getSharedProfilesForSubscription } from "@/actions/profile-shares/profile-share.actions";
+import { getSharedProfilesForClient } from "@/actions/profile-shares/profile-share.actions";
 import { prisma } from "@/lib/db/prisma";
 import { CreateOfferDialog } from "@/components/shared/create-offer-dialog";
 import { BiodataDownloadButton } from "@/components/shared/biodata-download-button";
 import { SavedBanner } from "@/components/shared/saved-banner";
 import { Row, Section, ProfileDetailSections } from "@/components/shared/profile-detail-sections";
+import { getPaymentHistory } from "@/lib/stats/payment-history";
+import { PaymentHistorySection } from "@/components/subscriptions/payment-history-section";
+import { auth } from "@/lib/auth/auth";
 
 export default async function ViewProfilePage({
   params,
@@ -33,10 +36,11 @@ export default async function ViewProfilePage({
     where: { profileId: profile.id, status: "ACTIVE" },
     orderBy: { createdAt: "desc" },
   });
-  const sharedProfiles = activeSubscription
-    ? await getSharedProfilesForSubscription(activeSubscription.id)
-    : [];
+  const sharedProfiles = await getSharedProfilesForClient(profile.id);
   const plans = await prisma.plan.findMany({ where: { active: true }, orderBy: { price: "asc" } });
+  const paymentHistory = await getPaymentHistory(profile.id);
+  const session = await auth();
+  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
   return (
     <div className="space-y-6">
@@ -99,9 +103,14 @@ export default async function ViewProfilePage({
 
       <ProfileDetailSections profile={profile} />
 
-      {activeSubscription && (
-        <SharedProfilesTable rows={sharedProfiles} clientName={profile.name} clientProfileId={profile.id} clientId={profile.id} />
-      )}
+      <PaymentHistorySection
+        profileId={profile.id}
+        profileName={profile.name}
+        entries={paymentHistory}
+        isAdmin={isAdmin}
+      />
+
+      <SharedProfilesTable rows={sharedProfiles} clientName={profile.name} clientProfileId={profile.id} clientId={profile.id} />
     </div>
   );
 }

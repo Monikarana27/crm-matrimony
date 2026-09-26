@@ -8,7 +8,7 @@ import { getProfileDocuments } from "@/actions/documents/document.actions";
 import { DocumentUploader } from "@/components/shared/document-uploader";
 import { BiodataDownloadButton } from "@/components/shared/biodata-download-button";
 import { SharedProfilesTable } from "@/components/shared/shared-profiles-table";
-import { getSharedProfilesForSubscription } from "@/actions/profile-shares/profile-share.actions";
+import { getSharedProfilesForClient } from "@/actions/profile-shares/profile-share.actions";
 import { ProfileDetailSections } from "@/components/shared/profile-detail-sections";
 import { prisma } from "@/lib/db/prisma";
 
@@ -22,9 +22,7 @@ export default async function ServiceProfileDetailPage({ params }: { params: Pro
     where: { profileId: profile.id, status: "ACTIVE" },
     orderBy: { createdAt: "desc" },
   });
-  const sharedProfiles = activeSubscription
-    ? await getSharedProfilesForSubscription(activeSubscription.id)
-    : [];
+  const sharedProfiles = await getSharedProfilesForClient(profile.id);
 
   return (
     <div className="space-y-6">
@@ -51,9 +49,7 @@ export default async function ServiceProfileDetailPage({ params }: { params: Pro
         <DocumentUploader profileId={id} initialDocs={docs} />
       </div>
 
-      {activeSubscription && (
-        <SharedProfilesTable rows={sharedProfiles} clientName={profile.name} clientProfileId={profile.id} clientId={profile.id} />
-      )}
+      <SharedProfilesTable rows={sharedProfiles} clientName={profile.name} clientProfileId={profile.id} clientId={profile.id} />
     </div>
   );
 }
