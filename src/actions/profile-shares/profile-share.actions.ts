@@ -32,6 +32,30 @@ export async function getSharedProfilesForSubscription(subscriptionId: string) {
   });
 }
 
+/** All profiles ever shared with this client, across every subscription/renewal — not just the currently active one. */
+export async function getSharedProfilesForClient(profileId: string) {
+  await requireStaff();
+  return prisma.profileShare.findMany({
+    where: { subscription: { profileId } },
+    orderBy: { sharedAt: "desc" },
+    include: {
+      sharedProfile: { select: { id: true, name: true, profileCode: true, photoUrl: true, email: true } },
+      sharedBy: { select: { id: true, name: true } },
+      subscription: {
+        select: {
+          id: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          plan: { select: { name: true } },
+        },
+      },
+      interests: { orderBy: { sentAt: "desc" }, take: 1 },
+      comments: { orderBy: { createdAt: "desc" }, include: { author: { select: { name: true } } } },
+    },
+  });
+}
+
 export async function addProfileShareCommentAction(profileShareId: string, comment: string) {
   const session = await requireStaff();
   if (!comment.trim()) return { error: "Comment cannot be empty" };

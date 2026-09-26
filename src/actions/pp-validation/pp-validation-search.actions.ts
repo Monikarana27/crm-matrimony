@@ -30,6 +30,7 @@ export type PPValidationSearchFilters = {
   dietMulti?: string[];
   drinkingMulti?: string[];
   smokingMulti?: string[];
+  visaStatusMulti?: string[];
 };
 
 export async function searchProfilesForPPValidationAction(
@@ -68,6 +69,7 @@ export async function searchProfilesForPPValidationAction(
     ...(filters.dietMulti?.length ? { diet: { in: filters.dietMulti } } : {}),
     ...(filters.drinkingMulti?.length ? { drinking: { in: filters.drinkingMulti } } : {}),
     ...(filters.smokingMulti?.length ? { smoking: { in: filters.smokingMulti } } : {}),
+    ...(filters.visaStatusMulti?.length ? { visaStatus: { in: filters.visaStatusMulti } } : {}),
     ...(filters.annualIncomeRanges?.length ? { annualIncome: { in: filters.annualIncomeRanges } } : {}),
     ...(filters.annualIncomeCurrency ? { annualIncomeCurrency: filters.annualIncomeCurrency } : {}),
     ...(minHeightCm !== undefined || maxHeightCm !== undefined

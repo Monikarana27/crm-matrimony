@@ -19,6 +19,16 @@ function revalidateAll() {
 
 const preview = (s: string) => (s.length > 90 ? s.slice(0, 90) + "…" : s);
 
+/**
+ * Follow-up date/time is stored verbatim: the literal digits the user typed,
+ * saved into a UTC-labeled field rather than converted from IST. Accepts
+ * "YYYY-MM-DD" (date input) or "YYYY-MM-DDTHH:mm" (datetime-local input).
+ */
+function parseVerbatimFollowUp(value: string): Date {
+  const iso = value.length === 10 ? `${value}T00:00:00Z` : `${value}:00Z`;
+  return new Date(iso);
+}
+
 export async function createSmeFollowUpAction(input: {
   employeeId: string;
   note: string;
@@ -55,7 +65,7 @@ export async function createSmeFollowUpAction(input: {
       clientProfileId,
       createdById: user.id,
       note,
-      followUpDate: input.followUpDate ? new Date(input.followUpDate) : null,
+      followUpDate: input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null,
     },
     select: { id: true },
   });
@@ -131,6 +141,42 @@ export async function markSmeFollowUpDoneAction(id: string) {
       },
     });
   }
+
+  revalidateAll();
+}
+
+/** SME schedules a private follow-up for themselves (e.g. from PP Validation review). No role check on the assignee since it is always the caller. */
+export async function createSmeSelfFollowUpAction(input: {
+  note: string;
+  followUpDate?: string | null;
+  clientProfileCode?: string | null;
+}) {
+  const user = await requireSme();
+
+  const note = input.note?.trim();
+  if (!note) throw new Error("Note is required");
+
+  let clientProfileId: string | null = null;
+  const code = input.clientProfileCode?.trim().toUpperCase();
+  if (code) {
+    const profile = await prisma.profile.findUnique({
+      where: { profileCode: code },
+      select: { id: true },
+    });
+    if (!profile) throw new Error(`No client profile found with code ${code}`);
+    clientProfileId = profile.id;
+  }
+
+  await prisma.smeFollowUp.create({
+    data: {
+      employeeId: user.id,
+      clientProfileId,
+      createdById: user.id,
+      note,
+      followUpDate: input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null,
+    },
+    select: { id: true },
+  });
 
   revalidateAll();
 }

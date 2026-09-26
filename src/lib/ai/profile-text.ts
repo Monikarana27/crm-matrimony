@@ -196,6 +196,7 @@ function buildPartnerPreferenceDescription(
     pref.dietMulti?.length ? `Diet: ${pref.dietMulti.join(", ")}` : null,
     pref.drinkingMulti?.length ? `Drinking: ${pref.drinkingMulti.join(", ")}` : null,
     pref.smokingMulti?.length ? `Smoking: ${pref.smokingMulti.join(", ")}` : null,
+    pref.visaStatusMulti?.length ? `Visa Status: ${pref.visaStatusMulti.join(", ")}` : null,
   ]);
   addLine(parts, "Preferred lifestyle", lifestylePref);
 

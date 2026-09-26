@@ -42,11 +42,13 @@ export function Sidebar({
   extraModules = [],
   userName,
   isSME = false,
+  navBadges,
 }: {
   role: Role;
   extraModules?: string[];
   userName?: string;
   isSME?: boolean;
+  navBadges?: Record<string, number>;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -117,6 +119,7 @@ export function Sidebar({
             {group.items.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
+              const badgeCount = navBadges?.[item.href];
               return (
                 <Link
                   key={item.href}
@@ -133,15 +136,31 @@ export function Sidebar({
                   {isActive && !collapsed && (
                     <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary" />
                   )}
-                  <Icon
-                    className={cn(
-                      "h-4 w-4 shrink-0 transition-colors",
-                      isActive
-                        ? "text-sidebar-primary"
-                        : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground"
+                  <span className="relative shrink-0">
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 transition-colors",
+                        isActive
+                          ? "text-sidebar-primary"
+                          : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground"
+                      )}
+                    />
+                    {!!badgeCount && collapsed && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
+                        {badgeCount > 9 ? "9+" : badgeCount}
+                      </span>
                     )}
-                  />
-                  {!collapsed && item.label}
+                  </span>
+                  {!collapsed && (
+                    <span className="flex flex-1 items-center justify-between gap-2">
+                      {item.label}
+                      {!!badgeCount && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
+                          {badgeCount}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </Link>
               );
             })}

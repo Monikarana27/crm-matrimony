@@ -16,6 +16,7 @@ const MULTI_VALUE_FIELDS = new Set([
   "ppDiet",
   "ppDrinking",
   "ppSmoking",
+  "ppVisaStatus",
 ]);
 
 // Converts a submitted FormData into a plain object suitable for profileSchema.safeParse.
@@ -134,6 +135,7 @@ export function extractPartnerPreferenceData(parsed: ReturnType<typeof profileSc
     dietMulti: d.ppDiet ?? [],
     drinkingMulti: d.ppDrinking ?? [],
     smokingMulti: d.ppSmoking ?? [],
+    visaStatusMulti: d.ppVisaStatus ?? [],
     aboutDesiredPartner: d.ppAboutDesiredPartner || null,
   };
 }

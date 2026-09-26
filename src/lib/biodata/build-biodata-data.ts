@@ -166,6 +166,7 @@ export async function buildBiodataData(profileId: string) {
           diet: joinList(profile.partnerPreference.dietMulti),
           drinking: joinList(profile.partnerPreference.drinkingMulti),
           smoking: joinList(profile.partnerPreference.smokingMulti),
+          visaStatus: joinList(profile.partnerPreference.visaStatusMulti),
           aboutDesiredPartner: profile.partnerPreference.aboutDesiredPartner,
         }
       : null,

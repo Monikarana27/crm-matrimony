@@ -13,6 +13,7 @@ import {
   resubmitPPValidationAction,
   type PPSubmitInput,
 } from "@/actions/pp-validation/pp-validation.actions";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 const fieldClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -52,10 +53,12 @@ export function PPRequestForm({
   function handleSubmit() {
     setError(null);
     if (!clientName.trim()) return setError("Client name is required");
+    if (!clientGender) return setError("Client gender is required");
     if (!clientPhone.trim()) return setError("Client phone is required");
 
     const input: PPSubmitInput = {
       clientName,
+      clientGender,
       clientPhone,
       clientEmail,
       clientLocation,
@@ -124,7 +127,7 @@ export function PPRequestForm({
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Contact Number *</label>
-              <input className={fieldClass} value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
+              <PhoneInput defaultValue={clientPhone} onChange={setClientPhone} />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Client Email</label>

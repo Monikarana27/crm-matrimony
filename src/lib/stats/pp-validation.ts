@@ -98,9 +98,61 @@ export async function getPPRequestForEdit(id: string): Promise<{
       dietMulti: row.dietMulti,
       drinkingMulti: row.drinkingMulti,
       smokingMulti: row.smokingMulti,
+      visaStatusMulti: row.visaStatusMulti,
       aboutDesiredPartner: row.aboutDesiredPartner ?? "",
     },
   };
+}
+
+export type PPQueueRow = {
+  id: string;
+  clientName: string;
+  clientPhone: string;
+  clientLocation: string | null;
+  packageDetails: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  submittedByName: string | null;
+};
+
+/** SME queue: pending requests awaiting Maya's review, oldest first. */
+export async function getPendingPPRequests(): Promise<PPQueueRow[]> {
+  const session = await auth();
+  if (!session?.user?.isSME) throw new Error("Unauthorized");
+
+  const rows = await prisma.pPValidationRequest.findMany({
+    where: { status: "PENDING" },
+    orderBy: { createdAt: "asc" },
+    take: 200,
+    select: {
+      id: true,
+      clientName: true,
+      clientPhone: true,
+      clientLocation: true,
+      packageDetails: true,
+      createdAt: true,
+      updatedAt: true,
+      submittedBy: { select: { name: true } },
+    },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    clientName: r.clientName,
+    clientPhone: r.clientPhone,
+    clientLocation: r.clientLocation,
+    packageDetails: r.packageDetails,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+    submittedByName: r.submittedBy?.name ?? null,
+  }));
+}
+
+/** Lightweight count for nav/tab badges — same scope as getPendingPPRequests but no row fetch. */
+export async function getPendingPPValidationCount(): Promise<number> {
+  const session = await auth();
+  if (!session?.user?.isSME) return 0;
+  return prisma.pPValidationRequest.count({ where: { status: "PENDING" } });
 }
 
 export type PPAdminRow = {

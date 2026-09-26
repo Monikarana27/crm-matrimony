@@ -7,11 +7,13 @@ import { getMyTarget, getTeamSalesTargetsForMonth } from "@/actions/sales-target
 import { getTeamMemberIds } from "@/lib/hierarchy/team";
 import { getServiceQualityRollup } from "@/lib/stats/sme-rollup";
 import { getServiceFeedbackFeed, getActiveServiceEmployees } from "@/lib/stats/sme-feedback";
+import { getPendingPPValidationCount } from "@/lib/stats/pp-validation";
 import { DashboardTabs } from "@/components/layout/dashboard-tabs";
 import { SmeQualityView } from "@/components/sme/sme-quality-view";
 import { SmeFeedbackFeed } from "@/components/sme/sme-feedback-feed";
 import { SmeFollowUpTab } from "@/components/sme/sme-follow-up-tab";
 import { SmeClientCallsTab } from "@/components/sme/sme-client-calls-tab";
+import { PPApprovalTab } from "@/components/pp-validation/pp-approval-tab";
 import { MyFollowUps } from "@/components/sme/my-follow-ups";
 import { MyRating } from "@/components/sme/my-rating";
 import { getServiceWelcomeCallSummary } from "@/lib/stats/welcome-call-summary";
@@ -326,10 +328,11 @@ export default async function ServiceDashboardPage() {
   }
 
   const ownTeamSet = new Set([session!.user.id, ...teamIds]);
-  const [rollupRows, { feed }, smeEmployees] = await Promise.all([
+  const [rollupRows, { feed }, smeEmployees, pendingPPCount] = await Promise.all([
     getServiceQualityRollup(),
     getServiceFeedbackFeed(),
     getActiveServiceEmployees(),
+    getPendingPPValidationCount(),
   ]);
   const qualityRows = rollupRows.map((r) => ({
     ...r,
@@ -344,6 +347,7 @@ export default async function ServiceDashboardPage() {
         { label: "Client Feedback", content: <SmeFeedbackFeed feed={feed} employees={smeEmployees} /> },
         { label: "Follow-ups", content: <SmeFollowUpTab /> },
         { label: "Client Calls", content: <SmeClientCallsTab /> },
+        { label: "PP Validation", content: <PPApprovalTab />, badge: pendingPPCount },
       ]}
     />
   );

@@ -97,7 +97,7 @@ const MATCH_SELECT = {
   maritalStatus: true, religionId: true, religionOld: true, casteId: true, casteOld: true,
   motherTongueId: true, motherTongueOld: true, manglik: true, country: true, state: true,
   city: true, highestQualification: true, profession: true, annualIncome: true,
-  annualIncomeCurrency: true, diet: true, drinking: true, smoking: true, photoUrl: true,
+  annualIncomeCurrency: true, diet: true, drinking: true, smoking: true, visaStatus: true, photoUrl: true,
   partnerPreference: true,
 } as const;
 

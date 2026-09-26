@@ -9,6 +9,7 @@ import {
   OCCUPATION_OPTIONS,
   INCOME_RANGES_GENERIC,
   CURRENCY_OPTIONS,
+  VISA_STATUS_OPTIONS,
 } from "@/lib/constants/profile-options";
 
 const CHILDREN_OK_OPTIONS = ["Yes", "No"];
@@ -38,6 +39,7 @@ export type PPCriteria = {
   dietMulti: string[];
   drinkingMulti: string[];
   smokingMulti: string[];
+  visaStatusMulti: string[];
   aboutDesiredPartner: string;
 };
 
@@ -62,6 +64,7 @@ export const EMPTY_PP_CRITERIA: PPCriteria = {
   dietMulti: [],
   drinkingMulti: [],
   smokingMulti: [],
+  visaStatusMulti: [],
   aboutDesiredPartner: "",
 };
 
@@ -350,6 +353,15 @@ export function PPCriteriaFields({
             options={DRINKING_SMOKING_OPTIONS}
             value={value.smokingMulti}
             onValueChange={(v) => set("smokingMulti", v)}
+            placeholder="Doesn't matter"
+          />
+          <MultiSelectSearchableField
+            allowOpenToAll
+            name="visaStatus"
+            label="Visa Status"
+            options={VISA_STATUS_OPTIONS}
+            value={value.visaStatusMulti}
+            onValueChange={(v) => set("visaStatusMulti", v)}
             placeholder="Doesn't matter"
           />
         </div>

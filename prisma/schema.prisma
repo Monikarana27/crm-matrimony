@@ -42,6 +42,7 @@ model User {
   isSME      Boolean     @default(false)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  websiteLeadsLastViewedAt DateTime?
 
   managerId     String?
   manager       User?   @relation("UserHierarchy", fields: [managerId], references: [id], onDelete: SetNull)
@@ -347,6 +348,7 @@ model PartnerPreference {
   dietMulti     String[] @default([])
   drinkingMulti String[] @default([])
   smokingMulti  String[] @default([])
+  visaStatusMulti String[] @default([])
 
   aboutDesiredPartner String? @db.Text
 
@@ -469,6 +471,7 @@ model PPValidationRequest {
   dietMulti     String[] @default([])
   drinkingMulti String[] @default([])
   smokingMulti  String[] @default([])
+  visaStatusMulti String[] @default([])
 
   aboutDesiredPartner String? @db.Text
   /// Free-text for logic that doesn't fit clean fields (nested community

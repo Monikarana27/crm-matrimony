@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { getEmployeeExtraModules } from "@/actions/employees/employee-permission.actions";
 import { getMyTodayAttendance } from "@/actions/attendance/attendance.actions";
+import { getPendingPPValidationCount } from "@/lib/stats/pp-validation";
 import { OnBreakScreen } from "@/components/layout/on-break-screen";
 import { ScrollHelpers } from "@/components/layout/scroll-helpers";
 import { BackButton } from "@/components/layout/back-button";
@@ -22,6 +23,8 @@ export async function DashboardShell({
     : [];
 
   const attendance = await getMyTodayAttendance();
+  const pendingPPCount = session?.user?.isSME ? await getPendingPPValidationCount() : 0;
+  const navBadges = pendingPPCount > 0 ? { "/dashboard/sme": pendingPPCount } : undefined;
   const isExempt = role === "ADMIN" || role === "SUPER_ADMIN" || !!session?.user?.impersonating;
   const isOnBreak = !!attendance?.breakStart && !attendance?.breakEnd;
 
@@ -35,7 +38,7 @@ export async function DashboardShell({
         <ImpersonationBanner originalUserName={session.user.originalUserName} />
       )}
       <div className="flex flex-1">
-        <Sidebar role={role} extraModules={extraModules} userName={session?.user?.name ?? undefined} isSME={!!session?.user?.isSME} />
+        <Sidebar role={role} extraModules={extraModules} userName={session?.user?.name ?? undefined} isSME={!!session?.user?.isSME} navBadges={navBadges} />
         <div className="flex flex-1 flex-col min-w-0">
           <Header role={role} />
           <main className="flex-1 bg-muted/30 p-6">

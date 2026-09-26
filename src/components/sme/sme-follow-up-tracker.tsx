@@ -17,10 +17,14 @@ const fieldClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function fmtDue(d: Date | string) {
-  return new Date(d).toLocaleDateString("en-IN", {
+  const date = new Date(d);
+  const isMidnight =
+    date.getUTCHours() === 0 && date.getUTCMinutes() === 0 && date.getUTCSeconds() === 0;
+  return date.toLocaleString("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    ...(isMidnight ? {} : { hour: "numeric", minute: "2-digit" }),
     timeZone: "UTC",
   });
 }
@@ -160,11 +164,11 @@ export function SmeFollowUpTracker({
               onChange={(e) => setFormClientCode(e.target.value)}
             />
             <input
-              type="date"
+              type="datetime-local"
               className={fieldClass}
               value={formDate}
               onChange={(e) => setFormDate(e.target.value)}
-              aria-label="Follow-up date"
+              aria-label="Follow-up date and time"
             />
           </div>
           <textarea

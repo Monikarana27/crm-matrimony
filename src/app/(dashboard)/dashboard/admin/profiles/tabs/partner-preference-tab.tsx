@@ -19,6 +19,7 @@ import {
   MARITAL_STATUS_OPTIONS,
   INCOME_RANGES_GENERIC,
   CURRENCY_OPTIONS,
+  VISA_STATUS_OPTIONS,
 } from "@/lib/constants/profile-options";
 
 const CHILDREN_OK_OPTIONS = ["Yes", "No"];
@@ -194,6 +195,14 @@ export function PartnerPreferenceTab({ defaultValues }: { defaultValues: Record<
             label="Smoking"
             options={DRINKING_SMOKING_OPTIONS}
             defaultValue={pp.smokingMulti}
+            placeholder="Doesn't matter"
+          />
+          <MultiSelectSearchableField
+            allowOpenToAll
+            name="ppVisaStatus"
+            label="Visa Status"
+            options={VISA_STATUS_OPTIONS}
+            defaultValue={pp.visaStatusMulti}
             placeholder="Doesn't matter"
           />
         </div>

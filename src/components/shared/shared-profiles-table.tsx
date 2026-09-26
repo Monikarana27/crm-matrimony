@@ -44,6 +44,13 @@ type Row = {
   sharedBy: { id: string; name: string } | null;
   interests: { status: "PENDING" | "ACCEPTED" | "REJECTED" | "SENT" | "HOLD" }[];
   comments: Comment[];
+  subscription?: {
+    id: string;
+    startDate: Date;
+    endDate: Date | null;
+    status: string;
+    plan: { name: string };
+  };
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -430,6 +437,7 @@ export function SharedProfilesTable({
               <th className="p-3 font-medium">Feedback</th>
               <th className="p-3 font-medium">Notify Prospect</th>
               <th className="p-3 font-medium">Sent On</th>
+              <th className="p-3 font-medium">Subscription</th>
             </tr>
           </thead>
           <tbody>
@@ -472,12 +480,28 @@ export function SharedProfilesTable({
                   <td className="p-3 text-xs text-muted-foreground">
                     {new Date(row.sharedAt).toLocaleDateString("en-IN")}
                   </td>
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {row.subscription ? (
+                      <>
+                        <p>{row.subscription.plan.name}</p>
+                        <p>
+                          {new Date(row.subscription.startDate).toLocaleDateString("en-IN")}
+                          {" – "}
+                          {row.subscription.endDate
+                            ? new Date(row.subscription.endDate).toLocaleDateString("en-IN")
+                            : "Ongoing"}
+                        </p>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                 </tr>
               );
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                <td colSpan={7} className="p-8 text-center text-muted-foreground">
                   No profiles have been shared yet.
                 </td>
               </tr>

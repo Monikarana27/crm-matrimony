@@ -26,12 +26,24 @@ export type MyFollowUpEntry = {
   clientProfileCode: string | null;
 };
 
-// Follow-up dates are stored as UTC-midnight of the picked calendar date,
-// so compare as YYYY-MM-DD strings against today's date in IST.
+// Follow-up date/time is stored verbatim (see parseVerbatimFollowUp in
+// sme-follow-up.actions.ts): the literal digits typed, in a UTC-labeled field,
+// not a real UTC instant. Legacy/date-only entries (literal midnight, no time
+// picked) stay overdue only from the next calendar day, exactly as before.
+// Entries with an actual time become overdue the moment that time passes.
 function isOverdueDate(followUpDate: Date | null, resolvedAt: Date | null) {
   if (resolvedAt || !followUpDate) return false;
-  const todayIST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-  return followUpDate.toISOString().slice(0, 10) < todayIST;
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const nowVerbatim = new Date(Date.now() + IST_OFFSET_MS);
+  const isMidnight =
+    followUpDate.getUTCHours() === 0 &&
+    followUpDate.getUTCMinutes() === 0 &&
+    followUpDate.getUTCSeconds() === 0;
+  if (isMidnight) {
+    const todayVerbatim = nowVerbatim.toISOString().slice(0, 10);
+    return followUpDate.toISOString().slice(0, 10) < todayVerbatim;
+  }
+  return followUpDate.getTime() < nowVerbatim.getTime();
 }
 
 /** SME side: follow-ups the signed-in SME created. Newest first, max 300. */

@@ -102,6 +102,7 @@ export const profileSchema = z.object({
   ppDiet: z.array(z.string()).optional(),
   ppDrinking: z.array(z.string()).optional(),
   ppSmoking: z.array(z.string()).optional(),
+  ppVisaStatus: z.array(z.string()).optional(),
   ppAboutDesiredPartner: z.string().optional(),
 });
 
