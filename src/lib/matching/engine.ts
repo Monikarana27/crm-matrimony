@@ -39,7 +39,7 @@ const OPEN_TOKENS = new Set(["open to all", "open to any", "any", "doesn't matte
 
 const W = {
   age: 14, height: 5, marital: 9, religion: 14, caste: 11, tongue: 6, manglik: 5,
-  education: 8, profession: 4, income: 8, location: 10, diet: 4, drinking: 1, smoking: 1,
+  education: 8, profession: 4, income: 8, location: 10, diet: 4, drinking: 1, smoking: 1, visaStatus: 3,
 };
 
 const EDU_LEVEL: Record<string, number> = {
@@ -188,6 +188,7 @@ type Attrs = {
   diet: string | null;
   drinking: string | null;
   smoking: string | null;
+  visaStatus: string | null;
   hasPhoto: boolean;
 };
 
@@ -213,6 +214,7 @@ function attrsOf(row: Row, lk: Lookups): Attrs {
     diet: nz(row.diet),
     drinking: nz(row.drinking),
     smoking: nz(row.smoking),
+    visaStatus: nz(row.visaStatus),
     hasPhoto: !!row.photoUrl,
   };
 }
@@ -236,6 +238,7 @@ type Pref = {
   diet: string[] | null;
   drinking: string[] | null;
   smoking: string[] | null;
+  visaStatus: string[] | null;
 };
 
 function normalizePref(pp: Row | null, lk: Lookups): Pref {
@@ -273,6 +276,7 @@ function normalizePref(pp: Row | null, lk: Lookups): Pref {
     diet: prefList(p.dietMulti, p.diet),
     drinking: prefList(p.drinkingMulti, p.drinking),
     smoking: prefList(p.smokingMulti, p.smoking),
+    visaStatus: prefList(p.visaStatusMulti),
   };
 }
 
@@ -444,6 +448,13 @@ function scoreDirection(pref: Pref, c: Attrs, strict: boolean): DirResult {
     if (!v) add(key, W[key], 0.5, "unknown", `${key === "drinking" ? "Drinking" : "Smoking"} not given`);
     else if (list.includes(v)) add(key, W[key], 1, "match", `${key === "drinking" ? "Drinking" : "Smoking"}: ${c[key]}`);
     else add(key, W[key], 0.3, "mismatch", `${key === "drinking" ? "Drinking" : "Smoking"}: ${c[key]}`);
+  }
+
+  if (pref.visaStatus) {
+    const v = norm(c.visaStatus);
+    if (!v) add("visaStatus", W.visaStatus, 0.5, "unknown", "Visa status not given");
+    else if (pref.visaStatus.includes(v)) add("visaStatus", W.visaStatus, 1, "match", `Visa Status: ${c.visaStatus}`);
+    else add("visaStatus", W.visaStatus, 0.3, "mismatch", `Visa Status: ${c.visaStatus}`);
   }
 
   const totalW = criteria.reduce((s, x) => s + x.weight, 0);
