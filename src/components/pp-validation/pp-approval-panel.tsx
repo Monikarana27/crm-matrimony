@@ -123,13 +123,12 @@ function RequestDetail({
 
   function handleApprove() {
     setError(null);
-    if (!assignedEmployeeId) return setError("Pick an RM to assign");
     if (!clientGender) return setError("Client gender is required before approval — ask Sales to add it");
     startTransition(async () => {
       try {
         await approvePPValidationAction({
           requestId: request.id,
-          assignedEmployeeId,
+          assignedEmployeeId: assignedEmployeeId || undefined,
           matchesFound: results?.total,
           matchedProfileCodes: selectedCodes,
           note: reviewNote || undefined,
@@ -163,6 +162,7 @@ function RequestDetail({
         await createSmeSelfFollowUpAction({
           note: `PP request follow-up — ${request.clientName} (${request.clientPhone}): ${followUpNote}`,
           followUpDate: followUpDate || null,
+          ppRequestId: request.id,
         });
         onDone();
       } catch (e) {
@@ -253,7 +253,7 @@ function RequestDetail({
       <div className="grid gap-3 sm:grid-cols-2">
         <Select value={assignedEmployeeId} onValueChange={(v) => setAssignedEmployeeId(v ?? "")}>
           <SelectTrigger>
-            <SelectValue placeholder="Assign RM (required to approve)" />
+            <SelectValue placeholder="Assign RM (optional)" />
           </SelectTrigger>
           <SelectContent>
             {employees.map((e) => (

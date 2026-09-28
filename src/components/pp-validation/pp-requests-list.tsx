@@ -61,9 +61,24 @@ export function PPRequestsList({
               </span>
               <span className="ml-auto text-xs text-muted-foreground">Updated {fmt(r.updatedAt)}</span>
             </div>
-            {r.latestNote && (
+            {r.activity && r.activity.length > 0 ? (
+              <div className="space-y-2 border-l-2 border-slate-200 pl-3">
+                {r.activity.map((a) => (
+                  <div key={a.id} className="text-sm">
+                    <span className="font-medium">{a.by}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {" "}
+                      · {fmt(a.at)} · {a.label}
+                      {a.followUpDate ? ` due ${fmt(a.followUpDate)}` : ""}
+                      {a.resolved ? " (done)" : ""}
+                    </span>
+                    {a.text && <p className="whitespace-pre-wrap text-muted-foreground">{a.text}</p>}
+                  </div>
+                ))}
+              </div>
+            ) : r.latestNote ? (
               <p className="whitespace-pre-wrap text-sm text-muted-foreground">Note: {r.latestNote}</p>
-            )}
+            ) : null}
             {r.status === "NEEDS_REVISION" && editingId !== r.id && (
               <Button size="sm" variant="outline" disabled={loading} onClick={() => startEdit(r.id)}>
                 Edit &amp; resubmit

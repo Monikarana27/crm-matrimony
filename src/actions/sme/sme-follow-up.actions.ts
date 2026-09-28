@@ -150,6 +150,7 @@ export async function createSmeSelfFollowUpAction(input: {
   note: string;
   followUpDate?: string | null;
   clientProfileCode?: string | null;
+  ppRequestId?: string | null;
 }) {
   const user = await requireSme();
 
@@ -171,6 +172,7 @@ export async function createSmeSelfFollowUpAction(input: {
     data: {
       employeeId: user.id,
       clientProfileId,
+      ppRequestId: input.ppRequestId || null,
       createdById: user.id,
       note,
       followUpDate: input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null,

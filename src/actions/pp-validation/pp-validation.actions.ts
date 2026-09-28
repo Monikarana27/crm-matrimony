@@ -144,7 +144,7 @@ async function requireSME() {
 
 export type PPApproveInput = {
   requestId: string;
-  assignedEmployeeId: string;
+  assignedEmployeeId?: string;
   matchesFound?: number;
   matchedProfileCodes?: string[];
   note?: string;

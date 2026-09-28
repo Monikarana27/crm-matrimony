@@ -3,6 +3,16 @@ import { auth } from "@/lib/auth/auth";
 import type { PPCriteria } from "@/components/pp-validation/pp-criteria-fields";
 import { EMPTY_PP_CRITERIA } from "@/components/pp-validation/pp-criteria-fields";
 
+export type PPActivityItem = {
+  id: string;
+  by: string;
+  at: Date;
+  label: string;
+  text: string | null;
+  followUpDate?: Date | null;
+  resolved?: boolean;
+};
+
 export type PPRequestSummary = {
   id: string;
   clientName: string;
@@ -11,6 +21,7 @@ export type PPRequestSummary = {
   createdAt: Date;
   updatedAt: Date;
   latestNote: string | null;
+  activity?: PPActivityItem[];
 };
 
 const SALES_ROLES = ["SALES", "SALES_TL", "SALES_MANAGER", "SERVICE_MANAGER"];
@@ -30,19 +41,73 @@ export async function getMyPPRequests(): Promise<PPRequestSummary[]> {
       status: true,
       createdAt: true,
       updatedAt: true,
-      reviews: { orderBy: { createdAt: "desc" }, take: 1, select: { note: true } },
+      reviews: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          note: true,
+          decision: true,
+          matchesFound: true,
+          createdAt: true,
+          reviewer: { select: { name: true } },
+        },
+      },
+      followUps: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          note: true,
+          followUpDate: true,
+          resolvedAt: true,
+          createdAt: true,
+          createdBy: { select: { name: true } },
+        },
+      },
     },
   });
 
-  return rows.map((r) => ({
-    id: r.id,
-    clientName: r.clientName,
-    clientPhone: r.clientPhone,
-    status: r.status,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-    latestNote: r.reviews[0]?.note ?? null,
-  }));
+  return rows.map((r) => {
+    const reviewItems: PPActivityItem[] = r.reviews
+      .filter((v) => v.note || v.decision !== "PENDING" || v.matchesFound !== null)
+      .map((v) => ({
+        id: `r-${v.id}`,
+        by: v.reviewer.name,
+        at: v.createdAt,
+        label:
+          v.decision === "APPROVED"
+            ? "approved"
+            : v.decision === "NEEDS_REVISION"
+            ? "asked for revision"
+            : v.matchesFound !== null
+            ? `checked matches (${v.matchesFound} found)`
+            : "reviewed",
+        text: v.note,
+      }));
+    const followUpItems: PPActivityItem[] = r.followUps.map((f) => ({
+      id: `f-${f.id}`,
+      by: f.createdBy.name,
+      at: f.createdAt,
+      label: "follow-up",
+      text: f.note.replace(/^PP request follow-up — .*?\): /, ""),
+      followUpDate: f.followUpDate,
+      resolved: !!f.resolvedAt,
+    }));
+    const activity = [...reviewItems, ...followUpItems].sort(
+      (a, b) => b.at.getTime() - a.at.getTime()
+    );
+    return {
+      id: r.id,
+      clientName: r.clientName,
+      clientPhone: r.clientPhone,
+      status: r.status,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      latestNote: r.reviews[0]?.note ?? null,
+      activity,
+    };
+  });
 }
 
 export async function getPPRequestForEdit(id: string): Promise<{
@@ -153,6 +218,66 @@ export async function getPendingPPValidationCount(): Promise<number> {
   const session = await auth();
   if (!session?.user?.isSME) return 0;
   return prisma.pPValidationRequest.count({ where: { status: "PENDING" } });
+}
+
+export type PPReviewedRow = {
+  id: string;
+  clientName: string;
+  clientPhone: string;
+  packageDetails: string | null;
+  submittedByName: string | null;
+  decision: "APPROVED" | "NEEDS_REVISION";
+  note: string | null;
+  matchesFound: number | null;
+  reviewedAt: Date;
+  currentStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
+  assignedEmployeeName: string | null;
+};
+
+/** SME history: every APPROVED / NEEDS_REVISION decision made by the signed-in SME, newest first. */
+export async function getReviewedPPRequests(): Promise<PPReviewedRow[]> {
+  const session = await auth();
+  if (!session?.user?.isSME) throw new Error("Unauthorized");
+
+  const rows = await prisma.pPValidationReview.findMany({
+    where: {
+      reviewerId: session.user.id,
+      decision: { in: ["APPROVED", "NEEDS_REVISION"] },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: {
+      id: true,
+      decision: true,
+      note: true,
+      matchesFound: true,
+      createdAt: true,
+      request: {
+        select: {
+          clientName: true,
+          clientPhone: true,
+          packageDetails: true,
+          status: true,
+          submittedBy: { select: { name: true } },
+          assignedEmployee: { select: { name: true } },
+        },
+      },
+    },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    clientName: r.request.clientName,
+    clientPhone: r.request.clientPhone,
+    packageDetails: r.request.packageDetails,
+    submittedByName: r.request.submittedBy?.name ?? null,
+    decision: r.decision as "APPROVED" | "NEEDS_REVISION",
+    note: r.note,
+    matchesFound: r.matchesFound,
+    reviewedAt: r.createdAt,
+    currentStatus: r.request.status,
+    assignedEmployeeName: r.request.assignedEmployee?.name ?? null,
+  }));
 }
 
 export type PPAdminRow = {

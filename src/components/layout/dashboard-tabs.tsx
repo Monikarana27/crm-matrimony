@@ -1,13 +1,25 @@
 "use client";
 import { useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export function DashboardTabs({
   tabs,
 }: {
   tabs: { label: string; content: ReactNode; badge?: number }[];
 }) {
-  const [active, setActive] = useState(0);
+  const searchParams = useSearchParams();
+  const fromUrl = tabs.findIndex((t) => slug(t.label) === searchParams.get("tab"));
+  const [active, setActive] = useState(fromUrl >= 0 ? fromUrl : 0);
+
+  function select(i: number) {
+    setActive(i);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", slug(tabs[i].label));
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  }
 
   return (
     <div className="space-y-6">
@@ -15,7 +27,7 @@ export function DashboardTabs({
         {tabs.map((tab, i) => (
           <button
             key={tab.label}
-            onClick={() => setActive(i)}
+            onClick={() => select(i)}
             className={cn(
               "relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm transition-all",
               active === i
