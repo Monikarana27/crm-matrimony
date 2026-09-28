@@ -491,6 +491,7 @@ model PPValidationRequest {
   updatedAt DateTime @updatedAt
 
   reviews PPValidationReview[]
+  followUps SmeFollowUp[] @relation("PPRequestFollowUps")
 
   @@index([status])
   @@index([submittedById])
@@ -616,6 +617,8 @@ model SmeFollowUp {
   employee        User      @relation("SmeFollowUpEmployee", fields: [employeeId], references: [id])
   clientProfileId String?
   clientProfile   Profile?  @relation("SmeFollowUpClient", fields: [clientProfileId], references: [id])
+  ppRequestId     String?
+  ppRequest       PPValidationRequest? @relation("PPRequestFollowUps", fields: [ppRequestId], references: [id], onDelete: SetNull)
   createdById     String
   createdBy       User      @relation("SmeFollowUpCreatedBy", fields: [createdById], references: [id])
   note            String    @db.Text
@@ -627,6 +630,7 @@ model SmeFollowUp {
 
   @@index([employeeId])
   @@index([clientProfileId])
+  @@index([ppRequestId])
   @@map("sme_follow_ups")
 }
 
@@ -686,6 +690,8 @@ model Payment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   currency    String   @default("INR")
+  exchangeRate Float?
+  amountInr    Float?
 
   @@index([status])
   @@index([subscriptionId])
@@ -1516,4 +1522,30 @@ model ProfileAssignmentAuditLog {
 
   @@index([profileId])
   @@map("profile_assignment_audit_log")
+}
+
+// Traffic-source tracking for website enquiries. Written with raw SQL by
+// src/lib/analytics/enquiry-events.ts (never supplies id/createdAt, so both
+// need database-level defaults). No FK on leadId: leads can be deleted.
+model EnquiryEvent {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  leadId       String
+  isRepeat     Boolean  @default(false)
+  pagePath     String?
+  landingPath  String?
+  referrer     String?
+  referrerHost String?
+  channel      String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  utmTerm      String?
+  hasClickId   Boolean  @default(false)
+  device       String?
+  pagesViewed  Int?
+
+  @@index([createdAt])
+  @@index([leadId])
+  @@map("enquiry_events")
 }
