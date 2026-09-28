@@ -8,6 +8,12 @@ const prisma = new PrismaClient();
 const SHARED_PASSWORD = "Elite@123";
 
 async function main() {
+  const dbName = new URL(process.env.DATABASE_URL || "postgresql://x/none").pathname.slice(1);
+  if (process.env.ALLOW_SEED !== "yes" || process.env.SEED_DB_NAME !== dbName) {
+    console.error(`Seed blocked. It resets passwords and deletes users in database "${dbName}".`);
+    console.error(`To run it on purpose: ALLOW_SEED=yes SEED_DB_NAME=${dbName} npx tsx prisma/seed.ts`);
+    process.exit(1);
+  }
   const hashedPassword = await bcrypt.hash(SHARED_PASSWORD, 12);
 
   await prisma.user.upsert({
