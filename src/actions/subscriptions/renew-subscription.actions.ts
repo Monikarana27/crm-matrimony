@@ -80,7 +80,7 @@ export async function renewOrExtendSubscriptionAction(input: {
         transactionId: input.transactionId || null,
         notes: input.notes || null,
         paidAt,
-        currency: input.currency ?? "INR",
+        currency: input.currency ?? (plan.currency === "USD" ? "USD" : "INR"),
         createdById: session.user.id,
         soldById: input.soldById,
       },

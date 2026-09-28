@@ -19,7 +19,7 @@ import { ArrowLeft } from "lucide-react";
 type subscription = {
   id: string;
   profile: { id: string; name: string; profileCode: string };
-  plan: { id: string; name: string; price: number };
+  plan: { id: string; name: string; price: number; currency: string };
 };
 
 type Employee = { id: string; name: string; role: string };
@@ -57,7 +57,11 @@ export function RecordPaymentForm({ subscriptions, employees, action }: RecordPa
                 name="subscriptionId"
                 label="subscription"
                 value={subscriptionId}
-                onValueChange={setsubscriptionId}
+                onValueChange={(id) => {
+                  setsubscriptionId(id);
+                  const picked = subscriptions.find((s) => s.id === id);
+                  if (picked) setCurrency(picked.plan.currency === "USD" ? "USD" : "INR");
+                }}
                 options={subscriptions.map((s) => ({
                   id: s.id,
                   name: `${s.profile.name} (${s.profile.profileCode}) — ${s.plan.name}`,

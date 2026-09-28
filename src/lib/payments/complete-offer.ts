@@ -56,6 +56,7 @@ export async function completeOfferPayment(params: {
       paymentId: payment.id,
       soldById: offer.createdById,
       amount: offer.finalAmount,
+      currency: offer.currency,
       paidAt,
     });
 

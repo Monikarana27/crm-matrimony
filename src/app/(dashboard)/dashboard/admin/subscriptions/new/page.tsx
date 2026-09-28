@@ -11,7 +11,7 @@ export default async function NewSubscriptionPage() {
     }),
     prisma.plan.findMany({
       where: { active: true },
-      select: { id: true, name: true, price: true, durationDays: true },
+      select: { id: true, name: true, price: true, currency: true, durationDays: true },
       orderBy: { price: "asc" },
     }),
   ]);

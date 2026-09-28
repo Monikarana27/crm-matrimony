@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoney } from "@/lib/money";
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { CreateOfferDialog } from "@/components/shared/create-offer-dialog";
@@ -9,8 +11,8 @@ type Client = {
   name: string;
   profileCode: string;
   assignedTo: { id: string; name: string } | null;
-  subscriptions: { plan: { id: string; name: string; price: number } }[];
-  paymentOffers: { status: string; finalAmount: number; createdAt: Date }[];
+  subscriptions: { plan: { id: string; name: string; price: number; currency: string } }[];
+  paymentOffers: { status: string; finalAmount: number; currency: string; createdAt: Date }[];
 };
 
 const OFFER_STATUS_STYLES: Record<string, string> = {
@@ -21,13 +23,15 @@ const OFFER_STATUS_STYLES: Record<string, string> = {
   CANCELLED: "bg-red-100 text-red-700 border-red-200",
 };
 
-export function DiscountsTable({ clients, showAssignee }: { clients: Client[]; showAssignee: boolean }) {
-  const allPlans = Array.from(
-    new Map(
-      clients.flatMap((c) => c.subscriptions.map((s) => [s.plan.id, s.plan]))
-    ).values()
-  );
-
+export function DiscountsTable({
+  clients,
+  plans,
+  showAssignee,
+}: {
+  clients: Client[];
+  plans: { id: string; name: string; price: number; currency: string }[];
+  showAssignee: boolean;
+}) {
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full text-sm">
@@ -44,7 +48,7 @@ export function DiscountsTable({ clients, showAssignee }: { clients: Client[]; s
           {clients.map((client) => {
             const currentPlan = client.subscriptions[0]?.plan;
             const lastOffer = client.paymentOffers[0];
-            const clientPlans = currentPlan ? [currentPlan] : allPlans;
+            const clientPlans = plans;
 
             return (
               <tr key={client.id} className="border-b last:border-0">
@@ -61,7 +65,7 @@ export function DiscountsTable({ clients, showAssignee }: { clients: Client[]; s
                 <td className="p-3">
                   {lastOffer ? (
                     <Badge variant="outline" className={OFFER_STATUS_STYLES[lastOffer.status] ?? ""}>
-                      {lastOffer.status} — ₹{lastOffer.finalAmount.toLocaleString("en-IN")}
+                      {lastOffer.status} — {formatMoney(lastOffer.finalAmount, lastOffer.currency)}
                     </Badge>
                   ) : (
                     <span className="text-xs text-muted-foreground">No offers yet</span>

@@ -28,15 +28,21 @@ export default async function PaymentsPage({
     { label: "Failed", value: "FAILED" },
   ];
 
-  const totalPaid = payments
-    .filter((p) => p.status === "PAID")
+  const paidPayments = payments.filter((p) => p.status === "PAID");
+  const paidInr = paidPayments
+    .filter((p) => p.currency !== "USD")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const paidUsd = paidPayments
+    .filter((p) => p.currency === "USD")
     .reduce((sum, p) => sum + p.amount, 0);
 
   return (
     <div className="space-y-6">
       <DashboardHero
         title="Payments"
-        subtitle={`Total collected: ₹${totalPaid.toLocaleString("en-IN")}`}
+        subtitle={`Total collected: ₹${paidInr.toLocaleString("en-IN")}${
+          paidUsd > 0 ? ` + $${paidUsd.toLocaleString("en-US")}` : ""
+        }`}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">

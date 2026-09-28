@@ -71,12 +71,8 @@ export async function getNotifications(): Promise<NotificationItem[]> {
   const targetNotifications: NotificationItem[] = [];
 
   for (const target of targets) {
-    const achieved = await prisma.payment.aggregate({
-      where: {
-        createdById: target.userId,
-        status: "PAID",
-        paidAt: { gte: monthStart, lt: monthEnd },
-      },
+    const achieved = await prisma.achievement.aggregate({
+      where: { userId: target.userId, month: lastMonth, year: lastYear },
       _sum: { amount: true },
     });
 

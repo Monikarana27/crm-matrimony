@@ -68,6 +68,7 @@ export async function createPaymentAction(
     transactionId: formData.get("transactionId"),
     paymentLinkUrl: formData.get("paymentLinkUrl"),
     notes: formData.get("notes"),
+      currency: formData.get("currency") || "INR",
   });
 
   if (!parsed.success) {
@@ -86,6 +87,7 @@ export async function createPaymentAction(
       transactionId: parsed.data.transactionId || null,
       paymentLinkUrl: parsed.data.paymentLinkUrl || null,
       notes: parsed.data.notes || null,
+        currency: parsed.data.currency,
       paidAt,
       createdById: session.user.id,
     },
@@ -98,6 +100,7 @@ export async function createPaymentAction(
       paymentId: payment.id,
       soldById: parsed.data.soldById,
       amount: parsed.data.amount,
+      currency: parsed.data.currency,
       paidAt,
     });
     const sub = await prisma.subscription.findUnique({
@@ -124,7 +127,7 @@ export async function updatePaymentStatusAction(
   const updated = await prisma.payment.update({
     where: { id: paymentId },
     data: { status, paidAt },
-    select: { soldById: true, amount: true, subscription: { select: { profileId: true } } },
+    select: { soldById: true, amount: true, currency: true, subscription: { select: { profileId: true } } },
   });
 
   await logActivity(await getActingUserId(session), `PAYMENT_STATUS_${status}`, paymentId);
@@ -134,6 +137,7 @@ export async function updatePaymentStatusAction(
       paymentId,
       soldById: updated.soldById,
       amount: updated.amount,
+      currency: updated.currency,
       paidAt,
     });
     if (updated.subscription) {

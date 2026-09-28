@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoney } from "@/lib/money";
+
 import { useState, useTransition } from "react";
 import {
   Dialog,
@@ -20,12 +22,11 @@ import {
 import { createPaymentOfferAction } from "@/actions/payment-offers/payment-offer.actions";
 import { Tag, Copy, ExternalLink, Check } from "lucide-react";
 
-type Plan = { id: string; name: string; price: number };
+type Plan = { id: string; name: string; price: number; currency: string };
 
 export function CreateOfferDialog({ profileId, plans }: { profileId: string; plans: Plan[] }) {
   const [open, setOpen] = useState(false);
   const [planId, setPlanId] = useState("");
-  const [currency, setCurrency] = useState<"INR" | "USD">("INR");
   const [discountType, setDiscountType] = useState<"PERCENTAGE" | "FIXED">("PERCENTAGE");
   const [discountValue, setDiscountValue] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -35,6 +36,8 @@ export function CreateOfferDialog({ profileId, plans }: { profileId: string; pla
   const [copied, setCopied] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === planId);
+  // The offer currency always follows the plan (prevents a dollar price being billed in rupees).
+  const currency: "INR" | "USD" = selectedPlan?.currency === "USD" ? "USD" : "INR";
   const discount = parseFloat(discountValue) || 0;
   const finalAmount = selectedPlan
     ? discountType === "PERCENTAGE"
@@ -94,7 +97,7 @@ export function CreateOfferDialog({ profileId, plans }: { profileId: string; pla
                 <SelectContent>
                   {plans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} — ₹{p.price.toLocaleString("en-IN")}
+                      {p.name} — {formatMoney(p.price, p.currency)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -103,7 +106,7 @@ export function CreateOfferDialog({ profileId, plans }: { profileId: string; pla
 
             <div className="space-y-2">
               <Label>Currency / Payment Gateway</Label>
-              <Select value={currency} onValueChange={(v) => setCurrency(v as "INR" | "USD")}>
+              <Select value={currency} disabled>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="INR">INR — via PayU</SelectItem>
@@ -124,7 +127,7 @@ export function CreateOfferDialog({ profileId, plans }: { profileId: string; pla
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{discountType === "PERCENTAGE" ? "Discount %" : "Discount ₹"}</Label>
+                <Label>{discountType === "PERCENTAGE" ? "Discount %" : `Discount ${currency === "USD" ? "$" : "₹"}`}</Label>
                 <input
                   type="number"
                   value={discountValue}

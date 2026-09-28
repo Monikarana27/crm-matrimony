@@ -66,7 +66,7 @@ export async function createPaymentOfferAction(params: {
       finalAmount,
       status: "ACTIVE",
       expiresAt,
-      currency: params.currency ?? "INR",
+      currency: plan.currency === "USD" ? "USD" : "INR",
     },
   });
 
@@ -143,12 +143,12 @@ export async function getDiscountEligibleClients() {
         where: { status: "ACTIVE" },
         orderBy: { createdAt: "desc" },
         take: 1,
-        include: { plan: { select: { id: true, name: true, price: true } } },
+        include: { plan: { select: { id: true, name: true, price: true, currency: true } } },
       },
       paymentOffers: {
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { status: true, finalAmount: true, createdAt: true },
+        select: { status: true, finalAmount: true, currency: true, createdAt: true },
       },
     },
   });

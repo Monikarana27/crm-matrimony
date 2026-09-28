@@ -1,5 +1,6 @@
 "use server";
 
+import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { revalidatePath } from "next/cache";
@@ -208,10 +209,10 @@ export async function searchAttachableRecords(
   if (type === "PAYMENT") {
     const payments = await prisma.payment.findMany({
       where: { subscription: { profile: { deletedAt: null, name: { contains: query, mode: "insensitive" } } } },
-      select: { id: true, amount: true, subscription: { select: { profile: { select: { name: true } } } } },
+      select: { id: true, amount: true, currency: true, subscription: { select: { profile: { select: { name: true } } } } },
       take: 8,
     });
-    return payments.map((p) => ({ id: p.id, label: `₹${p.amount} — ${p.subscription.profile.name}` }));
+    return payments.map((p) => ({ id: p.id, label: `${formatMoney(p.amount, p.currency)} — ${p.subscription.profile.name}` }));
   }
 
   if (type === "SUBSCRIPTION") {

@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoney } from "@/lib/money";
+
 import { useActionState, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,7 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { SearchableSelectField } from "@/app/(dashboard)/dashboard/admin/profiles/tabs/searchable-select-field";
 
 type Profile = { id: string; name: string; profileCode: string };
-type Plan = { id: string; name: string; price: number; durationDays: number };
+type Plan = { id: string; name: string; price: number; currency: string; durationDays: number };
 
 interface AttachSubscriptionFormProps {
   profiles: Profile[];
@@ -64,7 +66,7 @@ export function AttachSubscriptionForm({ profiles, plans, action }: AttachSubscr
               label="Plan"
               value={planId}
               onValueChange={setPlanId}
-              options={plans.map((p) => ({ id: p.id, name: `${p.name} — ₹${p.price.toLocaleString("en-IN")} (${p.durationDays} days)` }))}
+              options={plans.map((p) => ({ id: p.id, name: `${p.name} — ${formatMoney(p.price, p.currency)} (${p.durationDays} days)` }))}
               placeholder="Select a plan"
               required
             />

@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoney } from "@/lib/money";
+
 import Link from "next/link";
 import { useTransition } from "react";
 import { DataTable, type Column } from "@/components/shared/data-table";
@@ -13,6 +15,7 @@ type PlanRow = {
   id: string;
   name: string;
   price: number;
+  currency: string;
   durationDays: number;
   description: string | null;
   active: boolean;
@@ -45,7 +48,7 @@ export function PlansTable({ plans }: { plans: PlanRow[] }) {
       header: "Price",
       sortable: true,
       render: (row) => (
-        <span className="tabular-nums">₹{row.price.toLocaleString("en-IN")}</span>
+        <span className="tabular-nums">{formatMoney(row.price, row.currency)}</span>
       ),
     },
     {

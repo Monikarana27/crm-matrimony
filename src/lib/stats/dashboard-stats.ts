@@ -1,3 +1,4 @@
+import { sumPaymentsInr } from "@/lib/payments/sum-inr";
 import { startOfTodayIST } from "@/lib/utils/date-boundaries";
 ﻿import { prisma } from "@/lib/db/prisma";
 
@@ -118,10 +119,7 @@ export async function getAdminStats() {
     prisma.profile.count({ where: { deletedAt: null, status: "ON_HOLD" } }),
     getTodaysSummary(),
   ]);
-  const paidAmountResult = await prisma.payment.aggregate({
-    where: { status: "PAID" },
-    _sum: { amount: true },
-  });
+  const paidAmountInr = await sumPaymentsInr(prisma, { status: "PAID" });
 
   return {
     leads: funnel,
@@ -133,7 +131,7 @@ export async function getAdminStats() {
       paidPayments,
       pendingPayments,
       failedPayments,
-      totalCollected: paidAmountResult._sum.amount ?? 0,
+      totalCollected: paidAmountInr,
     },
     meetings: { faceToFaceMeetings, teleMeetings },
     todaysActivityCount,
@@ -485,13 +483,10 @@ export async function getDailySalesReport(date: Date) {
           prisma.callLog.count({ where: { createdById: emp.id, calledAt: { gte: dayStart, lte: dayEnd } } }),
           prisma.meeting.count({ where: { profile: { deletedAt: null }, assignedToId: emp.id, createdAt: { gte: dayStart, lte: dayEnd } } }),
           prisma.lead.count({ where: { deletedAt: null, assignedToId: emp.id, status: "CONVERTED", updatedAt: { gte: dayStart, lte: dayEnd } } }),
-          prisma.payment.aggregate({
-            where: {
-              status: "PAID",
-              paidAt: { gte: dayStart, lte: dayEnd },
-              subscription: { profile: { assignedToId: emp.id } },
-            },
-            _sum: { amount: true },
+          sumPaymentsInr(prisma, {
+            status: "PAID",
+            paidAt: { gte: dayStart, lte: dayEnd },
+            subscription: { profile: { assignedToId: emp.id } },
           }),
         ]);
 
@@ -502,7 +497,7 @@ export async function getDailySalesReport(date: Date) {
         callsMade: remarkCalls + callLogCalls,
         meetingsScheduled,
         conversions,
-        revenue: revenueResult._sum.amount ?? 0,
+        revenue: revenueResult,
       };
     })
   );
@@ -528,13 +523,10 @@ export async function getMonthlySalesReport(month: number, year: number) {
           prisma.callLog.count({ where: { createdById: emp.id, calledAt: { gte: monthStart, lte: monthEnd } } }),
           prisma.meeting.count({ where: { profile: { deletedAt: null }, assignedToId: emp.id, createdAt: { gte: monthStart, lte: monthEnd } } }),
           prisma.lead.count({ where: { deletedAt: null, assignedToId: emp.id, status: "CONVERTED", updatedAt: { gte: monthStart, lte: monthEnd } } }),
-          prisma.payment.aggregate({
-            where: {
-              status: "PAID",
-              paidAt: { gte: monthStart, lte: monthEnd },
-              subscription: { profile: { assignedToId: emp.id } },
-            },
-            _sum: { amount: true },
+          sumPaymentsInr(prisma, {
+            status: "PAID",
+            paidAt: { gte: monthStart, lte: monthEnd },
+            subscription: { profile: { assignedToId: emp.id } },
           }),
         ]);
 
@@ -548,7 +540,7 @@ export async function getMonthlySalesReport(month: number, year: number) {
         meetingsScheduled,
         conversions,
         conversionPct,
-        revenue: revenueResult._sum.amount ?? 0,
+        revenue: revenueResult,
       };
     })
   );
@@ -598,10 +590,7 @@ export async function getOwnerSummary() {
     successStoriesThisMonth,
   ] = await Promise.all([
     prisma.lead.count({ where: { deletedAt: null, createdAt: { gte: todayStart, lte: todayEnd } } }),
-    prisma.payment.aggregate({
-      where: { status: "PAID", paidAt: { gte: todayStart, lte: todayEnd } },
-      _sum: { amount: true },
-    }),
+    sumPaymentsInr(prisma, { status: "PAID", paidAt: { gte: todayStart, lte: todayEnd } }),
     prisma.subscription.count({ where: { profile: { deletedAt: null }, status: "ACTIVE" } }),
     prisma.subscription.count({ where: { profile: { deletedAt: null }, status: "HOLD" } }),
     prisma.meeting.count({ where: { profile: { deletedAt: null }, scheduledAt: { gte: todayStart, lte: todayEnd } } }),
@@ -615,7 +604,7 @@ export async function getOwnerSummary() {
 
   return {
     newLeadsToday,
-    revenueToday: revenueToday._sum.amount ?? 0,
+    revenueToday,
     activeClients,
     onHoldClients,
     meetingsToday,

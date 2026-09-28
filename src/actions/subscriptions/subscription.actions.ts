@@ -31,7 +31,7 @@ export async function getSubscriptions(filter?: { status?: "ACTIVE" | "HOLD" | "
     orderBy: { createdAt: "desc" },
     include: {
       profile: { select: { id: true, name: true, profileCode: true } },
-      plan: { select: { id: true, name: true, price: true } },
+      plan: { select: { id: true, name: true, price: true, currency: true } },
     },
   });
 }
@@ -161,7 +161,7 @@ export async function getOngoingServices() {
     orderBy: { createdAt: "desc" },
     include: {
       profile: { select: { id: true, name: true, profileCode: true } },
-      plan: { select: { id: true, name: true, price: true } },
+      plan: { select: { id: true, name: true, price: true, currency: true } },
     },
   });
 }
@@ -177,7 +177,7 @@ export async function getExpiredClients() {
     orderBy: { createdAt: "desc" },
     include: {
       profile: { select: { id: true, name: true, profileCode: true } },
-      plan: { select: { id: true, name: true, price: true } },
+      plan: { select: { id: true, name: true, price: true, currency: true } },
     },
   });
 }
@@ -208,7 +208,7 @@ export async function getPausedSubscriptions() {
     orderBy: { pausedAt: "desc" },
     include: {
       profile: { select: { id: true, name: true, profileCode: true } },
-      plan: { select: { id: true, name: true, price: true } },
+      plan: { select: { id: true, name: true, price: true, currency: true } },
     },
   });
 }

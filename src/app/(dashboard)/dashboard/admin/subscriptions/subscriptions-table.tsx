@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoney } from "@/lib/money";
+
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { DataTable, type Column } from "@/components/shared/data-table";
@@ -25,7 +27,7 @@ type SubscriptionRow = {
   isPaused: boolean;
   pauseDays: number | null;
   profile: { id: string; name: string; profileCode: string };
-  plan: { id: string; name: string; price: number };
+  plan: { id: string; name: string; price: number; currency: string };
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -120,7 +122,7 @@ export function SubscriptionsTable({
         <span>
           {row.plan.name}{" "}
           <span className="text-xs text-muted-foreground tabular-nums">
-            (₹{row.plan.price.toLocaleString("en-IN")})
+            ({formatMoney(row.plan.price, row.plan.currency)})
           </span>
         </span>
       ),

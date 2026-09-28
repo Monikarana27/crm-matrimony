@@ -8,7 +8,7 @@ export default async function NewPaymentPage() {
     prisma.subscription.findMany({
       include: {
         profile: { select: { id: true, name: true, profileCode: true } },
-        plan: { select: { id: true, name: true, price: true } },
+        plan: { select: { id: true, name: true, price: true, currency: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
