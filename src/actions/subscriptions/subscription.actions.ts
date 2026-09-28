@@ -6,6 +6,7 @@ import { getActingUserId } from "@/lib/auth/get-acting-user";
 import { subscriptionSchema } from "@/lib/validations/subscription.schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { startOfTodayIST } from "@/lib/utils/date-boundaries";
 
 async function requireStaff() {
   const session = await auth();
@@ -156,6 +157,9 @@ export async function getOngoingServices() {
       ...scopedFilter,
       status: { in: ["ACTIVE", "HOLD"] },
       isPaused: false,
+      // Safety net: never list a plan whose last valid day has passed, even
+      // if the expire-subscriptions cron hasn't flipped its status yet.
+      OR: [{ endDate: null }, { endDate: { gte: startOfTodayIST() } }],
       ...(excludeIds.length ? { profileId: { notIn: excludeIds } } : {}),
     },
     orderBy: { createdAt: "desc" },

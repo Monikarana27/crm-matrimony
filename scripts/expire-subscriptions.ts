@@ -22,7 +22,7 @@ async function main() {
   // expiry below, so a client's old subscription expiring and their pre-paid
   // renewal activating always land on the same day — never drifts apart.
   const activated = await prisma.subscription.updateMany({
-    where: { status: "PENDING", startDate: { not: null, lte: cutoff } },
+    where: { status: "PENDING", startDate: { lte: cutoff } },
     data: { status: "ACTIVE" },
   });
 
