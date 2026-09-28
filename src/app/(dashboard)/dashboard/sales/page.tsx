@@ -224,7 +224,7 @@ export default async function SalesDashboardPage() {
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
               <div className="text-primary-foreground">
                 <p className="text-xs uppercase tracking-wide text-primary-foreground/70">
-                  My Target â€” {monthLabel}
+                  My Target — {monthLabel}
                 </p>
                 <p className="font-display text-2xl font-bold">{session?.user?.name}</p>
               </div>
@@ -232,18 +232,18 @@ export default async function SalesDashboardPage() {
                 <div>
                   <p className="text-xs text-primary-foreground/70">Target</p>
                   <p className="font-semibold tabular-nums">
-                    â‚¹{myTarget.targetAmount.toLocaleString("en-IN")}
+                    ₹{myTarget.targetAmount.toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-primary-foreground/70">Achieved</p>
                   <p className="font-semibold tabular-nums">
-                    â‚¹{myTarget.achievedAmount.toLocaleString("en-IN")}
+                    ₹{myTarget.achievedAmount.toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-primary-foreground/70">Remaining</p>
-                  <p className="font-semibold tabular-nums">â‚¹{remaining.toLocaleString("en-IN")}</p>
+                  <p className="font-semibold tabular-nums">₹{remaining.toLocaleString("en-IN")}</p>
                 </div>
               </div>
               <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-accent text-accent">
@@ -299,7 +299,7 @@ export default async function SalesDashboardPage() {
 
               <div>
                 <h3 className="mb-3 text-sm font-medium text-muted-foreground">
-                  Team Targets â€” {monthLabel}
+                  Team Targets — {monthLabel}
                 </h3>
                 <SalesTargetsGrid
   targets={teamTargets}

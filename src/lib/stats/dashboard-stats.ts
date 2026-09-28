@@ -224,7 +224,7 @@ export async function getSalesStats(userId: string) {
 
 /**
  * Same shape as getSalesStats, aggregated across an entire team
- * (an array of user IDs â€” typically the result of getTeamMemberIds).
+ * (an array of user IDs — typically the result of getTeamMemberIds).
  * Used on the Sales Manager / Sales TL dashboard's "My Team" section.
  */
 export async function getTeamSalesStats(teamIds: string[]) {
