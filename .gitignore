@@ -72,3 +72,10 @@ check-user.ts
 check-combo.js
 check-tmp.js
 migrate-shahina.ts
+
+*dump*.txt
+wipe-*.js
+*.bak
+*.bak-*
+src-tree.txt
+public-tree.txt
