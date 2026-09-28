@@ -278,6 +278,7 @@ export function ProfilesTable({
       key: "name",
       header: "Profile",
       sortable: true,
+      searchText: (row) => `${row.name} ${row.profileCode ?? ""}`,
       width: 220,
       render: (row) => (
         <div className="flex min-w-0 items-center gap-3">

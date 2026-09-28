@@ -20,6 +20,8 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
   sortable?: boolean;
   accessor?: (row: T) => string | number;
+  /** Text used only for the search box (e.g. name + code); does not affect sorting or rendering. */
+  searchText?: (row: T) => string;
   width?: number; // px width, needed for sticky offset math
 }
 
@@ -88,11 +90,15 @@ export function DataTable<T extends { id: string }>({
 
   const filtered = useMemo(() => {
     if (!search.trim()) return data;
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().replace(/\s+/g, " ").trim();
+    const qDigits = q.replace(/\D/g, "");
     return data.filter((row) =>
       columns.some((col) => {
-        const value = col.accessor ? col.accessor(row) : (row as any)[col.key];
-        return String(value ?? "").toLowerCase().includes(q);
+        const value = col.searchText ? col.searchText(row) : col.accessor ? col.accessor(row) : (row as any)[col.key];
+        const v = String(value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+        if (v.includes(q)) return true;
+        // phone-style query: compare digits only, ignoring spaces, dashes, +91
+        return qDigits.length >= 5 && /^[\d\s+\-()]+$/.test(q) && v.replace(/\D/g, "").includes(qDigits);
       })
     );
   }, [data, search, columns]);
