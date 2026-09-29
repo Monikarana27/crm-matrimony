@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from "@/lib/db/prisma";
+import { findExistingProfileLoose } from "@/lib/profiles/duplicate-check";
 import { auth } from "@/lib/auth/auth";
 import { revalidatePath } from "next/cache";
 import type { PPCriteria } from "@/components/pp-validation/pp-criteria-fields";
@@ -162,6 +163,15 @@ export async function approvePPValidationAction(input: PPApproveInput) {
   if (request.status === "APPROVED") throw new Error("Request already approved");
 
   let profileId = request.profileId;
+
+  if (!profileId) {
+    // Reuse an already-existing profile for this person instead of creating a duplicate.
+    const existingProfile = await findExistingProfileLoose({
+      name: request.clientName,
+      phone: request.clientPhone,
+    });
+    if (existingProfile) profileId = existingProfile.id;
+  }
 
   if (!profileId) {
     if (!request.clientGender) {

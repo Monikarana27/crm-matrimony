@@ -100,3 +100,31 @@ export async function findDuplicateProfileLoose({
   });
   return `Profile already exists: ${existing.name} (${existing.phone}) \u00b7 ${existing.profileCode} \u00b7 status ${existing.status} \u00b7 assigned to ${existing.assignedTo?.name ?? "nobody"} \u00b7 added ${created}. Open that profile instead of creating a new one.`;
 }
+
+// Returns the existing live profile matching by last 10 phone digits + normalized name, or null.
+export async function findExistingProfileLoose({
+  name,
+  phone,
+}: {
+  name: string;
+  phone: string;
+}): Promise<{ id: string; profileCode: string; name: string } | null> {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  const last10 = digits.slice(-10);
+  const key = nameKey(name);
+  if (!key) return null;
+
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    select id from profiles
+    where "deletedAt" is null
+      and right(regexp_replace(phone, '[^0-9]', '', 'g'), 10) = ${last10}`;
+  if (rows.length === 0) return null;
+
+  const candidates = await prisma.profile.findMany({
+    where: { id: { in: rows.map((r) => r.id) } },
+    select: { id: true, profileCode: true, name: true },
+    orderBy: { createdAt: "asc" },
+  });
+  return candidates.find((c) => nameKey(c.name) === key) ?? null;
+}
