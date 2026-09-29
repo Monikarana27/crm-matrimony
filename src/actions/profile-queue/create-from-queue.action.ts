@@ -7,6 +7,7 @@ import { generateProfileCode } from "@/lib/utils/profile-code";
 import { extractProfileData, extractPartnerPreferenceData, formDataToProfileRaw } from "@/lib/utils/profile-data";
 import { redirect } from "next/navigation";
 import { regenerateProfileEmbedding } from "@/lib/ai/regenerate-embedding";
+import { findDuplicateProfileLoose } from "@/lib/profiles/duplicate-check";
 
 export async function createProfileFromQueueAction(queueId: string, _prevState: unknown, formData: FormData) {
   const session = await auth();
@@ -24,6 +25,9 @@ export async function createProfileFromQueueAction(queueId: string, _prevState: 
   if (!profileData || !ppData) {
     return { error: "Invalid form data" };
   }
+
+  const dupMessage = await findDuplicateProfileLoose({ name: profileData.name, phone: profileData.phone });
+  if (dupMessage) return { error: dupMessage };
 
   const profileCode = await generateProfileCode(parsed.data.gender);
 

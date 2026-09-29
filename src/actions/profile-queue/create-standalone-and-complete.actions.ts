@@ -7,6 +7,7 @@ import { profileSchema } from "@/lib/validations/profile.schema";
 import { extractProfileData, extractPartnerPreferenceData, formDataToProfileRaw } from "@/lib/utils/profile-data";
 import { redirect } from "next/navigation";
 import { regenerateProfileEmbedding } from "@/lib/ai/regenerate-embedding";
+import { findDuplicateProfileLoose } from "@/lib/profiles/duplicate-check";
 
 function requireProfileCreatorRole(session: { user?: { role?: string } } | null) {
   if (!session?.user) throw new Error("Unauthorized");
@@ -31,6 +32,9 @@ export async function createStandaloneProfileAction(
   if (!name || !phone || !["MALE", "FEMALE", "OTHER"].includes(gender)) {
     return { error: "Name, phone, and gender are required." };
   }
+
+  const dupMessage = await findDuplicateProfileLoose({ name, phone });
+  if (dupMessage) return { error: dupMessage };
 
   const profileCode = await generateProfileCode(gender as "MALE" | "FEMALE" | "OTHER");
 
