@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { DashboardHero } from "@/components/layout/dashboard-hero";
 import { Button } from "@/components/ui/button";
-import { Plus, Globe } from "lucide-react";
+import { Plus, Globe, Megaphone } from "lucide-react";
 import { LeadsTable } from "./leads-table";
 
 export default async function LeadsPage({
@@ -117,6 +117,12 @@ export default async function LeadsPage({
                 {unseenWebsiteLeadsCount > 0 && (
                   <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-background" />
                 )}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/admin/leads/meta-enquiries">
+                <Megaphone className="mr-2 h-4 w-4" />
+                Meta Enquiries
               </Link>
             </Button>
             <Button asChild>
