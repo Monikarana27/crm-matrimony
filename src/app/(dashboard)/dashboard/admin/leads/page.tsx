@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLeads, getWebsiteEnquiryCount, getUnseenWebsiteLeadsCount } from "@/actions/leads/lead.actions";
+import { getLeads, getWebsiteEnquiryCount, getMetaEnquiryCount, getUnseenWebsiteLeadsCount } from "@/actions/leads/lead.actions";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { DashboardHero } from "@/components/layout/dashboard-hero";
@@ -43,6 +43,7 @@ export default async function LeadsPage({
     ...(createdToday ? { createdToday: true } : {}),
   });
   const websiteEnquiryCount = canAssign ? await getWebsiteEnquiryCount() : 0;
+  const metaEnquiryCount = canAssign ? await getMetaEnquiryCount() : 0;
   const unseenWebsiteLeadsCount = canAssign ? await getUnseenWebsiteLeadsCount() : 0;
   const employees = canAssign
     ? await prisma.user.findMany({
@@ -119,10 +120,15 @@ export default async function LeadsPage({
                 )}
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="relative">
               <Link href="/dashboard/admin/leads/meta-enquiries">
                 <Megaphone className="mr-2 h-4 w-4" />
                 Meta Enquiries
+                {metaEnquiryCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
+                    {metaEnquiryCount}
+                  </span>
+                )}
               </Link>
             </Button>
             <Button asChild>

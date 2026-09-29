@@ -140,6 +140,20 @@ export async function getWebsiteEnquiryCount(): Promise<number> {
 }
 
 /** Count for the second "unseen new leads" badge: per-admin, cleared when they open the page. */
+export async function getMetaEnquiryCount(): Promise<number> {
+  const session = await requireStaff();
+  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
+
+  const assignmentGraceCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return prisma.lead.count({
+    where: {
+      deletedAt: null,
+      source: { startsWith: "Meta" },
+      OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }],
+    },
+  });
+}
+
 export async function getUnseenWebsiteLeadsCount(): Promise<number> {
   const session = await requireStaff();
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
