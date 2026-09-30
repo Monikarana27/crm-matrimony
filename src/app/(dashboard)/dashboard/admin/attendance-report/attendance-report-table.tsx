@@ -1,6 +1,7 @@
 "use client";
 import { DataTable, type Column } from "@/components/shared/data-table";
 import { Badge } from "@/components/ui/badge";
+import { computeExpectedLeaveMs } from "@/lib/attendance/expected-leave";
 
 type AttendanceRow = {
   id: string;
@@ -73,6 +74,21 @@ export function AttendanceReportTable({ rows }: { rows: AttendanceRow[] }) {
         const mins = breakMinutes(row);
         if (mins === null) return "—";
         return `${fmtTime(row.breakStart)}–${fmtTime(row.breakEnd)} (${mins}m)`;
+      },
+    },
+    {
+      key: "expectedLeave",
+      header: "Expected Leave",
+      render: (row) => {
+        if (!row.checkIn) return "—";
+        const hasBreak = !!row.breakStart && !!row.breakEnd;
+        const ms = computeExpectedLeaveMs(
+          new Date(row.checkIn).getTime(),
+          hasBreak ? new Date(row.breakStart!).getTime() : null,
+          hasBreak ? new Date(row.breakEnd!).getTime() : null,
+          Date.now()
+        );
+        return fmtTime(new Date(ms));
       },
     },
     { key: "checkOut", header: "Check Out", render: (row) => fmtTime(row.checkOut) },

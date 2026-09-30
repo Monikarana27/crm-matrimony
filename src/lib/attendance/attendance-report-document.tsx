@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { computeExpectedLeaveMs } from "@/lib/attendance/expected-leave";
 
 const MANDATORY_HOURS = 8.5;
 
@@ -19,11 +20,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   headerCell: { fontFamily: "Helvetica-Bold", color: "#334155" },
-  colDate: { width: "20%" },
-  colEmployee: { width: "30%" },
-  colRole: { width: "20%" },
-  colHours: { width: "15%" },
-  colShortfall: { width: "15%" },
+  colDate: { width: "16%" },
+  colEmployee: { width: "24%" },
+  colRole: { width: "18%" },
+  colLeave: { width: "14%" },
+  colHours: { width: "14%" },
+  colShortfall: { width: "14%" },
   shortfall: { color: "#b91c1c", fontFamily: "Helvetica-Bold" },
   ok: { color: "#15803d" },
 });
@@ -40,6 +42,22 @@ type ReportRow = {
 function totalHoursDecimal(row: ReportRow): number | null {
   if (!row.checkIn || !row.checkOut) return null;
   return (new Date(row.checkOut).getTime() - new Date(row.checkIn).getTime()) / 3600000;
+}
+
+function expectedLeaveLabel(row: ReportRow): string {
+  if (!row.checkIn) return "—";
+  const hasBreak = !!row.breakStart && !!row.breakEnd;
+  const ms = computeExpectedLeaveMs(
+    new Date(row.checkIn).getTime(),
+    hasBreak ? new Date(row.breakStart!).getTime() : null,
+    hasBreak ? new Date(row.breakEnd!).getTime() : null,
+    Date.now()
+  );
+  return new Date(ms).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
 }
 
 export function AttendanceReportDocument({
@@ -59,6 +77,7 @@ export function AttendanceReportDocument({
             <Text style={[styles.headerCell, styles.colDate]}>Date</Text>
             <Text style={[styles.headerCell, styles.colEmployee]}>Employee</Text>
             <Text style={[styles.headerCell, styles.colRole]}>Role</Text>
+            <Text style={[styles.headerCell, styles.colLeave]}>Expected Leave</Text>
             <Text style={[styles.headerCell, styles.colHours]}>Total Hours</Text>
             <Text style={[styles.headerCell, styles.colShortfall]}>Shortfall</Text>
           </View>
@@ -75,6 +94,7 @@ export function AttendanceReportDocument({
                 </Text>
                 <Text style={styles.colEmployee}>{row.user.name}</Text>
                 <Text style={styles.colRole}>{row.user.role.replace(/_/g, " ")}</Text>
+                <Text style={styles.colLeave}>{expectedLeaveLabel(row)}</Text>
                 <Text style={styles.colHours}>{total !== null ? `${total.toFixed(1)}h` : "—"}</Text>
                 <Text style={[styles.colShortfall, shortfallMin !== null ? styles.shortfall : styles.ok]}>
                   {shortfallMin !== null ? `-${shortfallMin}m` : total !== null ? "OK" : "—"}

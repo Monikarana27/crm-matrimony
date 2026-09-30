@@ -1,4 +1,5 @@
-﻿import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ interface FunnelRow {
   total: number;
   colorClass: string;
   barColorClass: string;
+  href?: string;
 }
 
 export function FunnelBreakdown({
@@ -37,11 +39,8 @@ export function FunnelBreakdown({
       <CardContent className="space-y-3">
         {rows.map((row) => {
           const pct = row.total > 0 ? (row.value / row.total) * 100 : 0;
-          return (
-            <div
-              key={row.label}
-              className={cn("rounded-lg border-l-4 p-3", row.colorClass)}
-            >
+          const inner = (
+            <div className={cn("rounded-lg border-l-4 p-3", row.colorClass)}>
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">{row.label}</span>
                 <span className="tabular-nums">
@@ -58,6 +57,17 @@ export function FunnelBreakdown({
                 />
               </div>
             </div>
+          );
+          return row.href ? (
+            <Link
+              key={row.label}
+              href={row.href}
+              className="block rounded-lg transition-opacity hover:opacity-90"
+            >
+              {inner}
+            </Link>
+          ) : (
+            <div key={row.label}>{inner}</div>
           );
         })}
       </CardContent>

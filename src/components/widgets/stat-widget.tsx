@@ -21,6 +21,8 @@ interface StatWidgetProps {
   progress?: { value: number; colorClass?: string };
   actionLabel?: string;
   actionHref?: string;
+  /** Makes the whole card clickable. */
+  href?: string;
 }
 
 const ACCENT_CLASSES: Record<AccentColor, { chip: string; icon: string }> = {
@@ -46,12 +48,18 @@ export function StatWidget({
   progress,
   actionLabel,
   actionHref,
+  href,
 }: StatWidgetProps) {
   const allZero = lines.length > 0 && lines.every((line) => isZero(line.value));
   const accent = ACCENT_CLASSES[accentColor];
 
-  return (
-    <Card className="flex flex-col border border-border/80 shadow-sm transition-shadow hover:shadow-md">
+  const card = (
+    <Card
+      className={cn(
+        "flex h-full flex-col border border-border/80 shadow-sm transition-shadow hover:shadow-md",
+        href && "cursor-pointer hover:border-primary/40"
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           {Icon && (
@@ -132,15 +140,27 @@ export function StatWidget({
             <div className="mt-1 h-2 w-full rounded-full border border-dashed border-muted-foreground/25" />
           )
         )}
-        {actionLabel && actionHref && (
-          <Link
-            href={actionHref}
-            className="mt-auto pt-1 text-sm font-medium text-primary hover:underline"
-          >
-            {actionLabel}
-          </Link>
+        {actionLabel && (href || actionHref) && (
+          href ? (
+            <span className="mt-auto pt-1 text-sm font-medium text-primary">{actionLabel}</span>
+          ) : (
+            <Link
+              href={actionHref!}
+              className="mt-auto pt-1 text-sm font-medium text-primary hover:underline"
+            >
+              {actionLabel}
+            </Link>
+          )
         )}
       </CardContent>
     </Card>
+  );
+
+  return href ? (
+    <Link href={href} className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+      {card}
+    </Link>
+  ) : (
+    card
   );
 }

@@ -10,13 +10,13 @@ import { LeadsTable } from "./leads-table";
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; pending?: string; followup?: string; created?: string }>;
+  searchParams: Promise<{ status?: string; pending?: string; followup?: string; created?: string; assigned?: string }>;
 }) {
   const session = await auth();
   const role = session!.user.role;
   const canAssign = role === "ADMIN" || role === "SUPER_ADMIN";
 
-  const { status, pending, followup, created } = await searchParams;
+  const { status, pending, followup, created, assigned } = await searchParams;
   const ALL_STATUSES = [
     "ACTIVE",
     "CONVERTED",
@@ -26,6 +26,7 @@ export default async function LeadsPage({
     "CLOSED",
     "NOT_INTERESTED",
     "INTERESTED",
+    "ALL",
   ] as const;
   // Employees never see Not Interested leads, so ignore that status for them.
   const validStatus =
@@ -35,12 +36,19 @@ export default async function LeadsPage({
   const staleOnly = pending === "stale";
   const followUpToday = followup === "today";
   const createdToday = created === "today";
+  const followUpOverdue = followup === "overdue";
+  const createdRange =
+    created === "yesterday" ? ("yesterday" as const) : created === "month" ? ("month" as const) : undefined;
+  const unassignedStrict = canAssign && assigned === "none";
 
   const leads = await getLeads({
     ...(validStatus ? { status: validStatus } : {}),
     ...(staleOnly ? { staleOnly: true } : {}),
     ...(followUpToday ? { followUpToday: true } : {}),
     ...(createdToday ? { createdToday: true } : {}),
+    ...(followUpOverdue ? { followUpOverdue: true } : {}),
+    ...(createdRange ? { createdRange } : {}),
+    ...(unassignedStrict ? { unassignedStrict: true } : {}),
   });
   const websiteEnquiryCount = canAssign ? await getWebsiteEnquiryCount() : 0;
   const metaEnquiryCount = canAssign ? await getMetaEnquiryCount() : 0;

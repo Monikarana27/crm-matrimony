@@ -33,12 +33,16 @@ export async function getLeads(filter?: {
     | "PENDING"
     | "CLOSED"
     | "NOT_INTERESTED"
-    | "INTERESTED";
+    | "INTERESTED"
+    | "ALL";
   staleOnly?: boolean;
   followUpToday?: boolean;
   createdToday?: boolean;
   sourceStartsWith?: string;
   unassignedOnly?: boolean;
+  unassignedStrict?: boolean;
+  followUpOverdue?: boolean;
+  createdRange?: "yesterday" | "month";
 }) {
   const session = await requireStaff();
   const scopedFilter =
@@ -56,7 +60,9 @@ export async function getLeads(filter?: {
   const HIDDEN_BY_DEFAULT: ("CONVERTED" | "NOT_INTERESTED" | "CLOSED")[] = ["CONVERTED", "NOT_INTERESTED", "CLOSED"];
 
   const statusFilter =
-    filter?.status === "CONVERTED"
+    filter?.status === "ALL"
+      ? {}
+      : filter?.status === "CONVERTED"
       ? { status: "CONVERTED" as const }
       : filter?.status === "ACTIVE"
       ? { status: { notIn: HIDDEN_BY_DEFAULT } }
@@ -92,15 +98,39 @@ export async function getLeads(filter?: {
       }
     : {};
 
+  const overdueFilter = filter?.followUpOverdue
+    ? { followUpDate: { lt: todayStart } }
+    : {};
+
+  // Match the dashboard cards: follow-up lists also hide these two dead statuses.
+  const followUpExclusion =
+    filter?.followUpToday || filter?.followUpOverdue
+      ? { NOT: { status: { in: ["NO_NOT_EXIST", "WRONG_NUMBER_FAKE_LEAD"] as ("NO_NOT_EXIST" | "WRONG_NUMBER_FAKE_LEAD")[] } } }
+      : {};
+
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
+  const createdRangeFilter =
+    filter?.createdRange === "yesterday"
+      ? { createdAt: { gte: yesterdayStart, lt: todayStart } }
+      : filter?.createdRange === "month"
+      ? { createdAt: { gte: monthStart, lte: todayEnd } }
+      : {};
+
+  // Strictly unassigned: admins only, never widens an employee's own scope.
+  const unassignedStrictFilter =
+    filter?.unassignedStrict && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role)
+      ? { assignedToId: null }
+      : {};
+
   const sourceFilter = filter?.sourceStartsWith
     ? { source: { startsWith: filter.sourceStartsWith } }
     : {};
 
-  // For Website Enquiries: stay visible for 24h after assignment too, not just while unassigned,
-  // so a just-assigned enquiry doesn't vanish from the list the instant it's picked up.
-  const assignmentGraceCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // For Website Enquiries: only leads that are still unassigned. Assigned leads leave immediately.
   const unassignedFilter = filter?.unassignedOnly
-    ? { AND: [{ OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }] }] }
+    ? { AND: [{ assignedToId: null }] }
     : {};
 
   // Not Interested leads are visible to admins only.
@@ -110,7 +140,7 @@ export async function getLeads(filter?: {
     : { AND: [{ status: { not: "NOT_INTERESTED" as const } }] };
 
   return prisma.lead.findMany({
-    where: { deletedAt: null, ...scopedFilter, ...statusFilter, ...followUpFilter, ...staleFilter, ...createdTodayFilter, ...sourceFilter, ...unassignedFilter, ...hideNotInterested },
+    where: { deletedAt: null, ...scopedFilter, ...statusFilter, ...followUpFilter, ...staleFilter, ...createdTodayFilter, ...createdRangeFilter, ...overdueFilter, ...followUpExclusion, ...sourceFilter, ...unassignedFilter, ...unassignedStrictFilter, ...hideNotInterested },
     orderBy: { createdAt: "desc" },
     include: {
       assignedTo: { select: { id: true, name: true } },
@@ -129,12 +159,11 @@ export async function getWebsiteEnquiryCount(): Promise<number> {
   const session = await requireStaff();
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
 
-  const assignmentGraceCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return prisma.lead.count({
     where: {
       deletedAt: null,
       source: { startsWith: "Website" },
-      OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }],
+      assignedToId: null,
     },
   });
 }
@@ -144,12 +173,11 @@ export async function getMetaEnquiryCount(): Promise<number> {
   const session = await requireStaff();
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
 
-  const assignmentGraceCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return prisma.lead.count({
     where: {
       deletedAt: null,
       source: { startsWith: "Meta" },
-      OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }],
+      assignedToId: null,
     },
   });
 }
@@ -548,9 +576,21 @@ async function requireAdmin() {
 export async function deleteLeadAction(id: string) {
   const session = await requireAdmin();
 
-  const target = await prisma.lead.findUnique({ where: { id }, select: { source: true } });
-  if (target?.source?.startsWith("Website")) {
-    return { error: "Website-sourced leads can't be deleted, to protect lead-analytics attribution." };
+  const target = await prisma.lead.findUnique({
+    where: { id },
+    select: { source: true, name: true, email: true, notes: true },
+  });
+
+  // Test leads (whole word "test" in name/email/notes) are always deletable.
+  const isTestLead = /\btest\b/i.test(
+    [target?.name, target?.email, target?.notes].filter(Boolean).join(" ")
+  );
+
+  const isProtectedSource =
+    target?.source?.startsWith("Website") || target?.source?.startsWith("Meta");
+
+  if (isProtectedSource && !isTestLead) {
+    return { error: "Website and Meta leads can't be deleted, to protect lead-analytics attribution. (Test leads are exempt.)" };
   }
 
   // Soft-delete the lead and remove its welcome calls (logs cascade).

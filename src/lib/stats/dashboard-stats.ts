@@ -465,6 +465,18 @@ export async function getOrgLeadPipeline() {
   return { newLead, contacted, interested, followUp, converted, lost, total };
 }
 
+export async function getOrgFollowUpsDueToday() {
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+  return prisma.lead.count({
+    where: {
+      deletedAt: null,
+      status: { notIn: PENDING_EXCLUDED_STATUSES },
+      followUpDate: { lte: todayEnd },
+    },
+  });
+}
+
 export async function getDailySalesReport(date: Date) {
   const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(date); dayEnd.setHours(23, 59, 59, 999);
@@ -751,8 +763,8 @@ export async function getSalesNeedsAttention() {
   ]);
 
   return [
-    { label: "Unassigned Leads", count: unassignedLeads, href: "/dashboard/admin/leads", tone: "warning" as const },
-    { label: "Overdue Follow-ups", count: overdueFollowUps, href: "/dashboard/admin/leads", tone: "danger" as const },
+    { label: "Unassigned Leads", count: unassignedLeads, href: "/dashboard/admin/leads?status=ALL&assigned=none", tone: "warning" as const },
+    { label: "Overdue Follow-ups", count: overdueFollowUps, href: "/dashboard/admin/leads?followup=overdue", tone: "danger" as const },
     { label: "Profiles Pending Approval (3+ days)", count: stalePendingApproval, href: "/dashboard/admin/profile-approvals", tone: "warning" as const },
     { label: "Welcome Calls Overdue", count: overdueWelcomeCalls, href: "/dashboard/welcome-calls?department=SALES&status=PENDING", tone: "warning" as const },
   ];

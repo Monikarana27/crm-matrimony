@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const MANDATORY_MS = 8.5 * 60 * 60 * 1000;
+import { computeExpectedLeaveMs } from "@/lib/attendance/expected-leave";
 
 function formatRemaining(ms: number) {
   const abs = Math.abs(ms);
@@ -23,39 +22,42 @@ export function DayCountdown({
   breakEnd?: Date | string | null;
 }) {
   const checkInMs = new Date(checkIn).getTime();
-  // breakStart/breakEnd are accepted for API compatibility but no longer
-  // subtracted here: the 8.5h target covers total time since check-in,
-  // including any break, per policy (break does not extend the day).
-  void breakStart;
-  void breakEnd;
+  const breakStartMs = breakStart ? new Date(breakStart).getTime() : null;
+  const breakEndMs = breakEnd ? new Date(breakEnd).getTime() : null;
 
-  function computeRemaining() {
+  function compute() {
     const now = Date.now();
-    const elapsedMs = now - checkInMs;
-    return MANDATORY_MS - elapsedMs;
+    const leaveMs = computeExpectedLeaveMs(checkInMs, breakStartMs, breakEndMs, now);
+    return { leaveMs, remaining: leaveMs - now };
   }
 
-  const [remaining, setRemaining] = useState(computeRemaining);
+  const [state, setState] = useState(compute);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setRemaining(computeRemaining());
-    }, 1000);
+    setState(compute());
+    const id = setInterval(() => setState(compute()), 1000);
     return () => clearInterval(id);
-  }, [checkInMs]);
+  }, [checkInMs, breakStartMs, breakEndMs]);
 
-  const isOvertime = remaining <= 0;
+  const isOvertime = state.remaining <= 0;
+  const leaveLabel = new Date(state.leaveMs).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
-    <span
-      className={
-        isOvertime
-          ? "font-mono text-xs text-slate-500"
-          : "font-mono text-xs text-emerald-700"
-      }
-    >
-      {isOvertime ? "+" : "-"}
-      {formatRemaining(remaining)}
+    <span className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground">Leave by {leaveLabel}</span>
+      <span
+        className={
+          isOvertime
+            ? "font-mono text-xs text-slate-500"
+            : "font-mono text-xs text-emerald-700"
+        }
+      >
+        {isOvertime ? "+" : "-"}
+        {formatRemaining(state.remaining)}
+      </span>
     </span>
   );
 }
