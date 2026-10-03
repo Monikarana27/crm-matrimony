@@ -19,6 +19,20 @@ function revalidateAll() {
 
 const preview = (s: string) => (s.length > 90 ? s.slice(0, 90) + "…" : s);
 
+/** Today's date in IST (YYYY-MM-DD), used to stamp entries added to an existing follow-up. */
+function istDateStamp() {
+  return new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** Drops the repeated "PP request follow-up — Name (phone): " lead-in when adding to an existing follow-up. */
+function stripPPLeadIn(s: string) {
+  return s.replace(/^PP request follow-up — .*?\):\s*/, "");
+}
+
+function appendEntry(existing: string, added: string) {
+  return `${existing}\n\n[${istDateStamp()}] ${stripPPLeadIn(added)}`;
+}
+
 /**
  * Follow-up date/time is stored verbatim: the literal digits the user typed,
  * saved into a UTC-labeled field rather than converted from IST. Accepts
@@ -59,16 +73,42 @@ export async function createSmeFollowUpAction(input: {
     clientProfileId = profile.id;
   }
 
-  const created = await prisma.smeFollowUp.create({
-    data: {
-      employeeId: employee.id,
-      clientProfileId,
-      createdById: user.id,
-      note,
-      followUpDate: input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null,
-    },
-    select: { id: true },
-  });
+  const newDate = input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null;
+
+  // One follow-up per client: if this SME already has an open follow-up for the
+  // same employee + client, add to it instead of creating another card.
+  const existing = clientProfileId
+    ? await prisma.smeFollowUp.findFirst({
+        where: {
+          employeeId: employee.id,
+          clientProfileId,
+          createdById: user.id,
+          resolvedAt: null,
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, note: true },
+      })
+    : null;
+
+  const created = existing
+    ? await prisma.smeFollowUp.update({
+        where: { id: existing.id },
+        data: {
+          note: appendEntry(existing.note, note),
+          ...(newDate ? { followUpDate: newDate } : {}),
+        },
+        select: { id: true },
+      })
+    : await prisma.smeFollowUp.create({
+        data: {
+          employeeId: employee.id,
+          clientProfileId,
+          createdById: user.id,
+          note,
+          followUpDate: newDate,
+        },
+        select: { id: true },
+      });
 
   if (employee.id !== user.id) {
     await prisma.notification.create({
@@ -168,17 +208,46 @@ export async function createSmeSelfFollowUpAction(input: {
     clientProfileId = profile.id;
   }
 
-  await prisma.smeFollowUp.create({
-    data: {
-      employeeId: user.id,
-      clientProfileId,
-      ppRequestId: input.ppRequestId || null,
-      createdById: user.id,
-      note,
-      followUpDate: input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null,
-    },
-    select: { id: true },
-  });
+  const newDate = input.followUpDate ? parseVerbatimFollowUp(input.followUpDate) : null;
+  const ppRequestId = input.ppRequestId || null;
+
+  // One follow-up per client: add to the open follow-up for this PP request
+  // (or this client profile) instead of creating another card.
+  const existing =
+    ppRequestId || clientProfileId
+      ? await prisma.smeFollowUp.findFirst({
+          where: {
+            employeeId: user.id,
+            createdById: user.id,
+            resolvedAt: null,
+            ...(ppRequestId ? { ppRequestId } : { clientProfileId }),
+          },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, note: true },
+        })
+      : null;
+
+  if (existing) {
+    await prisma.smeFollowUp.update({
+      where: { id: existing.id },
+      data: {
+        note: appendEntry(existing.note, note),
+        ...(newDate ? { followUpDate: newDate } : {}),
+      },
+    });
+  } else {
+    await prisma.smeFollowUp.create({
+      data: {
+        employeeId: user.id,
+        clientProfileId,
+        ppRequestId,
+        createdById: user.id,
+        note,
+        followUpDate: newDate,
+      },
+      select: { id: true },
+    });
+  }
 
   revalidateAll();
 }

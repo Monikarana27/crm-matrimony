@@ -92,7 +92,7 @@ export async function getMyFollowUps(): Promise<MyFollowUpEntry[]> {
   const rows = await prisma.smeFollowUp.findMany({
     where: { employeeId: session.user.id, resolvedAt: null },
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: 200,
     select: {
       id: true,
       note: true,

@@ -69,7 +69,7 @@ export async function buildBiodataData(profileId: string) {
       motherTongueRef: true,
       documents: {
         where: { type: "PHOTO" },
-        orderBy: { order: "asc" },
+        orderBy: [{ order: "asc" }, { uploadedAt: "asc" }, { id: "asc" }],
         take: 4,
       },
     },
@@ -80,7 +80,7 @@ export async function buildBiodataData(profileId: string) {
   // reliably populated from the old-CRM migration. Profile.photoUrl is
   // empty for most migrated profiles, so it's only a fallback.
   const mainPhotoSource = profile.documents[0]?.url ?? profile.photoUrl;
-  const galleryDocs = profile.documents.slice(profile.documents[0] ? 1 : 0, 4);
+  const galleryDocs = profile.documents.slice(1, 4);
 
   const [photoDataUri, galleryPhotos] = await Promise.all([
     resolvePhotoDataUri(mainPhotoSource),
