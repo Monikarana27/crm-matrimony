@@ -57,7 +57,7 @@ export async function getLeads(filter?: {
   // "All Leads" (no status param) and "Active" both hide CONVERTED and
   // NOT_INTERESTED leads by default - those live on their own dedicated
   // tabs/pages instead of cluttering the main list.
-  const HIDDEN_BY_DEFAULT: ("CONVERTED" | "NOT_INTERESTED" | "CLOSED")[] = ["CONVERTED", "NOT_INTERESTED", "CLOSED"];
+  const HIDDEN_BY_DEFAULT: ("CONVERTED" | "NOT_INTERESTED" | "CLOSED" | "MARRIAGE_FIXED")[] = ["CONVERTED", "NOT_INTERESTED", "CLOSED", "MARRIAGE_FIXED"];
 
   const statusFilter =
     filter?.status === "ALL"
@@ -128,9 +128,11 @@ export async function getLeads(filter?: {
     ? { source: { startsWith: filter.sourceStartsWith } }
     : {};
 
-  // For Website Enquiries: only leads that are still unassigned. Assigned leads leave immediately.
+  // For Website/Meta Enquiries: stay visible for 12h after assignment too, not just while
+  // unassigned, so a just-assigned enquiry doesn't vanish from the list instantly.
+  const assignmentGraceCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
   const unassignedFilter = filter?.unassignedOnly
-    ? { AND: [{ assignedToId: null }] }
+    ? { AND: [{ OR: [{ assignedToId: null }, { assignedAt: { gte: assignmentGraceCutoff } }] }] }
     : {};
 
   // Not Interested leads are visible to admins only.
@@ -154,32 +156,31 @@ export async function getLeads(filter?: {
   });
 }
 
-/** Count for the Website Enquiries badge: unassigned, or assigned within the last 24h. */
+const ENQUIRY_BADGE_GRACE_HOURS = 12;
+
+function enquiryBadgeWhere(sourcePrefix: string) {
+  const cutoff = new Date(Date.now() - ENQUIRY_BADGE_GRACE_HOURS * 60 * 60 * 1000);
+  return {
+    deletedAt: null,
+    source: { startsWith: sourcePrefix },
+    OR: [{ assignedToId: null }, { assignedAt: { gte: cutoff } }],
+  };
+}
+
+/** Count for the Website Enquiries badge: unassigned, or assigned within the grace window. */
 export async function getWebsiteEnquiryCount(): Promise<number> {
   const session = await requireStaff();
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
 
-  return prisma.lead.count({
-    where: {
-      deletedAt: null,
-      source: { startsWith: "Website" },
-      assignedToId: null,
-    },
-  });
+  return prisma.lead.count({ where: enquiryBadgeWhere("Website") });
 }
 
-/** Count for the second "unseen new leads" badge: per-admin, cleared when they open the page. */
+/** Count for the Meta Enquiries badge: unassigned, or assigned within the grace window. */
 export async function getMetaEnquiryCount(): Promise<number> {
   const session = await requireStaff();
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
 
-  return prisma.lead.count({
-    where: {
-      deletedAt: null,
-      source: { startsWith: "Meta" },
-      assignedToId: null,
-    },
-  });
+  return prisma.lead.count({ where: enquiryBadgeWhere("Meta") });
 }
 
 export async function getUnseenWebsiteLeadsCount(): Promise<number> {
@@ -440,13 +441,21 @@ export async function updateLeadAction(
     return { error: duplicateMessage };
   }
 
+  // Website/Meta leads keep their original source forever, to protect lead-analytics
+  // attribution — the same reasoning deleteLeadAction already applies to these leads.
+  const existing = await prisma.lead.findUnique({ where: { id }, select: { source: true } });
+  const isLockedSource = existing?.source?.startsWith("Website") || existing?.source?.startsWith("Meta");
+  if (isLockedSource && (parsed.data.source || null) !== existing!.source) {
+    return { error: `Source can't be changed for a ${existing!.source} lead, to protect lead-analytics attribution.` };
+  }
+
   await prisma.lead.update({
     where: { id },
     data: {
       name: parsed.data.name,
       phone: parsed.data.phone,
       email: parsed.data.email || null,
-      source: parsed.data.source || null,
+      source: isLockedSource ? existing!.source : parsed.data.source || null,
       gender: parsed.data.gender || null,
       status: parsed.data.status,
       notes: parsed.data.notes || null,

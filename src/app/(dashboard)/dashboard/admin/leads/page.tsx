@@ -63,7 +63,8 @@ export default async function LeadsPage({
           active: true,
           OR: [
             { role: { in: ["SALES", "SALES_TL", "SALES_MANAGER"] } },
-            { id: "cmtikr0sw0007l39ioxk0lgns" },
+            { id: "cmtikr0sw0007l39ioxk0lgns" }, // Devender Kumar (SERVICE_MANAGER), cross-access to Sales
+            { id: "cmtjpw3lj000cl3t0rypla7tl" }, // Noor Jahan (SERVICE), added as lead assignee on request
           ],
         },
         select: { id: true, name: true },
