@@ -56,6 +56,47 @@ async function getAchievedAmount(userId: string, month: number, year: number) {
   return result._sum.amount ?? 0;
 }
 
+/**
+ * Full month-by-month history for one employee: every month that has
+ * either a SalesTarget row or an Achievement entry, newest first.
+ * Admin-only, matching getSalesTargetsForMonth's access level.
+ */
+export async function getEmployeeTargetHistory(userId: string) {
+  await requireAdmin();
+
+  const targets = await prisma.salesTarget.findMany({
+    where: { userId },
+    orderBy: [{ year: "desc" }, { month: "desc" }],
+  });
+
+  const achievementMonths = await prisma.achievement.findMany({
+    where: { userId },
+    select: { month: true, year: true },
+    distinct: ["month", "year"],
+  });
+
+  const targetKeys = new Set(targets.map((t) => `${t.year}-${t.month}`));
+  const achievementOnlyMonths = achievementMonths.filter(
+    (a) => !targetKeys.has(`${a.year}-${a.month}`)
+  );
+
+  const allMonths = [
+    ...targets.map((t) => ({ month: t.month, year: t.year, targetAmount: t.targetAmount as number | null })),
+    ...achievementOnlyMonths.map((a) => ({ month: a.month, year: a.year, targetAmount: null as number | null })),
+  ].sort((a, b) => (b.year - a.year) || (b.month - a.month));
+
+  const history = await Promise.all(
+    allMonths.map(async (m) => ({
+      month: m.month,
+      year: m.year,
+      targetAmount: m.targetAmount,
+      achievedAmount: await getAchievedAmount(userId, m.month, m.year),
+    }))
+  );
+
+  return history;
+}
+
 export async function getSalesTargetsForMonth(month: number, year: number) {
   await requireAdmin();
 

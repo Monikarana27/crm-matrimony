@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { setSalesTargetAction } from "@/actions/sales-targets/sales-target.actions";
+import { setSalesTargetAction, getEmployeeTargetHistory } from "@/actions/sales-targets/sales-target.actions";
+import { useTransition } from "react";
 import { ViewAsButton } from "@/components/shared/view-as-button";
 import Link from "next/link";
 
@@ -113,10 +114,81 @@ function TargetCard({
             <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
               Edit Target
             </Button>
+            <TargetHistory employeeId={data.employee.id} />
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+type HistoryRow = {
+  month: number;
+  year: number;
+  targetAmount: number | null;
+  achievedAmount: number;
+};
+
+function TargetHistory({ employeeId }: { employeeId: string }) {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<HistoryRow[] | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function toggle() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setOpen(true);
+    if (rows === null) {
+      startTransition(async () => {
+        const data = await getEmployeeTargetHistory(employeeId);
+        setRows(data);
+      });
+    }
+  }
+
+  return (
+    <div className="pt-1">
+      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={toggle}>
+        {open ? "Hide History" : "View History"}
+      </Button>
+      {open && (
+        <div className="mt-2 space-y-1.5 rounded-md border bg-muted/30 p-2">
+          {isPending && <p className="text-xs text-muted-foreground">Loading…</p>}
+          {!isPending && rows && rows.length === 0 && (
+            <p className="text-xs text-muted-foreground">No history yet.</p>
+          )}
+          {!isPending &&
+            rows &&
+            rows.map((r) => {
+              const pct =
+                r.targetAmount && r.targetAmount > 0
+                  ? Math.min((r.achievedAmount / r.targetAmount) * 100, 100)
+                  : 0;
+              const label = new Date(r.year, r.month - 1).toLocaleDateString("en-IN", {
+                month: "short",
+                year: "numeric",
+              });
+              return (
+                <div key={`${r.year}-${r.month}`} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="tabular-nums">
+                    {r.targetAmount !== null ? (
+                      <>
+                        ₹{r.achievedAmount.toLocaleString("en-IN")} / ₹
+                        {r.targetAmount.toLocaleString("en-IN")} ({pct.toFixed(0)}%)
+                      </>
+                    ) : (
+                      <>₹{r.achievedAmount.toLocaleString("en-IN")} (no target set)</>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+        </div>
+      )}
+    </div>
   );
 }
 
