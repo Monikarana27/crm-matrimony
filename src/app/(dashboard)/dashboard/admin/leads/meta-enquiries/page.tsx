@@ -21,7 +21,8 @@ export default async function MetaEnquiriesPage() {
       active: true,
       OR: [
         { role: { in: ["SALES", "SALES_TL", "SALES_MANAGER"] } },
-        { id: "cmtikr0sw0007l39ioxk0lgns" },
+        { id: "cmtikr0sw0007l39ioxk0lgns" }, // Devender Kumar (SERVICE_MANAGER), cross-access to Sales
+        { id: "cmtikr0t3000dl39i1d69v61y" /* Shahina Sheikh (SERVICE_MANAGER), added as lead assignee on request */ }, { id: "cmtjpw3lj000cl3t0rypla7tl" }, // Noor Jahan (SERVICE), added as lead assignee on request
       ],
     },
     select: { id: true, name: true },

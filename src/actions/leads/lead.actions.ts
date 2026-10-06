@@ -38,6 +38,7 @@ export async function getLeads(filter?: {
   staleOnly?: boolean;
   followUpToday?: boolean;
   createdToday?: boolean;
+  assignedToday?: boolean;
   sourceStartsWith?: string;
   unassignedOnly?: boolean;
   unassignedStrict?: boolean;
@@ -79,6 +80,18 @@ export async function getLeads(filter?: {
   todayStart.setHours(0, 0, 0, 0);
   const createdTodayFilter = filter?.createdToday
     ? { createdAt: { gte: todayStart, lte: todayEnd } }
+    : {};
+
+  // "Assigned today" uses the IST day, the same rule as the dashboard New Leads Today card.
+  const assignedTodayStartMs =
+    Date.UTC(
+      new Date(Date.now() + 5.5 * 60 * 60 * 1000).getUTCFullYear(),
+      new Date(Date.now() + 5.5 * 60 * 60 * 1000).getUTCMonth(),
+      new Date(Date.now() + 5.5 * 60 * 60 * 1000).getUTCDate()
+    ) -
+    5.5 * 60 * 60 * 1000;
+  const assignedTodayFilter = filter?.assignedToday
+    ? { assignedAt: { gte: new Date(assignedTodayStartMs), lt: new Date(assignedTodayStartMs + 24 * 60 * 60 * 1000) } }
     : {};
 
   const staleCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -142,7 +155,8 @@ export async function getLeads(filter?: {
     : { AND: [{ status: { not: "NOT_INTERESTED" as const } }] };
 
   return prisma.lead.findMany({
-    where: { deletedAt: null, ...scopedFilter, ...statusFilter, ...followUpFilter, ...staleFilter, ...createdTodayFilter, ...createdRangeFilter, ...overdueFilter, ...followUpExclusion, ...sourceFilter, ...unassignedFilter, ...unassignedStrictFilter, ...hideNotInterested },
+    where: { deletedAt: null, ...scopedFilter, ...statusFilter, ...followUpFilter, ...staleFilter, ...createdTodayFilter,
+      ...assignedTodayFilter, ...createdRangeFilter, ...overdueFilter, ...followUpExclusion, ...sourceFilter, ...unassignedFilter, ...unassignedStrictFilter, ...hideNotInterested },
     orderBy: { createdAt: "desc" },
     include: {
       assignedTo: { select: { id: true, name: true } },

@@ -40,12 +40,14 @@ export default async function LeadsPage({
   const createdRange =
     created === "yesterday" ? ("yesterday" as const) : created === "month" ? ("month" as const) : undefined;
   const unassignedStrict = canAssign && assigned === "none";
+  const assignedToday = assigned === "today";
 
   const leads = await getLeads({
     ...(validStatus ? { status: validStatus } : {}),
     ...(staleOnly ? { staleOnly: true } : {}),
     ...(followUpToday ? { followUpToday: true } : {}),
     ...(createdToday ? { createdToday: true } : {}),
+    ...(assignedToday ? { assignedToday: true } : {}),
     ...(followUpOverdue ? { followUpOverdue: true } : {}),
     ...(createdRange ? { createdRange } : {}),
     ...(unassignedStrict ? { unassignedStrict: true } : {}),
@@ -64,7 +66,7 @@ export default async function LeadsPage({
           OR: [
             { role: { in: ["SALES", "SALES_TL", "SALES_MANAGER"] } },
             { id: "cmtikr0sw0007l39ioxk0lgns" }, // Devender Kumar (SERVICE_MANAGER), cross-access to Sales
-            { id: "cmtjpw3lj000cl3t0rypla7tl" }, // Noor Jahan (SERVICE), added as lead assignee on request
+            { id: "cmtikr0t3000dl39i1d69v61y" /* Shahina Sheikh (SERVICE_MANAGER), added as lead assignee on request */ }, { id: "cmtjpw3lj000cl3t0rypla7tl" }, // Noor Jahan (SERVICE), added as lead assignee on request
           ],
         },
         select: { id: true, name: true },

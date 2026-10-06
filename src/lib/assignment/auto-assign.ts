@@ -2,7 +2,12 @@ import { prisma } from "@/lib/db/prisma";
 import type { Role } from "@/lib/permissions/roles";
 import { startOfTodayIST } from "@/lib/utils/date-boundaries";
 
-async function getEligibleEmployees(roles: Role[]) {
+// Real staff outside the sales roles who should also receive auto-assigned leads.
+const LEAD_EXTRA_ASSIGNEE_IDS = [
+  "cmtikr0t3000dl39i1d69v61y", // Shahina Sheikh (SERVICE_MANAGER)
+];
+
+async function getEligibleEmployees(roles: Role[], extraIds: string[] = []) {
   const now = new Date();
 
   const onLeaveIds = await prisma.leaveRequest.findMany({
@@ -12,7 +17,10 @@ async function getEligibleEmployees(roles: Role[]) {
   const onLeaveSet = new Set(onLeaveIds.map((l) => l.userId));
 
   const employees = await prisma.user.findMany({
-    where: { role: { in: roles }, active: true },
+    where: {
+      active: true,
+      OR: [{ role: { in: roles } }, ...(extraIds.length ? [{ id: { in: extraIds } }] : [])],
+    },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
@@ -20,8 +28,12 @@ async function getEligibleEmployees(roles: Role[]) {
   return employees.filter((e) => !onLeaveSet.has(e.id));
 }
 
-async function getNextInRotation(poolKey: string, roles: Role[]): Promise<string | null> {
-  const eligible = await getEligibleEmployees(roles);
+async function getNextInRotation(
+  poolKey: string,
+  roles: Role[],
+  extraIds: string[] = []
+): Promise<string | null> {
+  const eligible = await getEligibleEmployees(roles, extraIds);
   if (eligible.length === 0) return null;
 
   const setting = await prisma.systemSetting.findUnique({ where: { key: poolKey } });
@@ -46,7 +58,7 @@ async function getNextInRotation(poolKey: string, roles: Role[]): Promise<string
 
 // Used for: new leads, new profiles (both start life with Sales — unpaid clients).
 export async function getNextSalesAssignee(): Promise<string | null> {
-  return getNextInRotation("auto_assign_sales", ["SALES", "SALES_TL", "SALES_MANAGER"]);
+  return getNextInRotation("auto_assign_sales", ["SALES", "SALES_TL", "SALES_MANAGER"], LEAD_EXTRA_ASSIGNEE_IDS);
 }
 
 // Auto-assignment policy: ONLY Meta leads are round-robin assigned. Every other
@@ -62,7 +74,13 @@ const META_SOURCE_WHERE = META_SOURCE_PATTERNS.map((p) => ({
   source: { contains: p, mode: "insensitive" as const },
 }));
 
+// Switched off on request: new Meta leads now stay unassigned until someone
+// assigns them manually (Assign Leads page or the Meta enquiries page).
+// Set to true to bring the round-robin back.
+const META_AUTO_ASSIGN_ENABLED = false;
+
 export async function getNextSalesAssigneeForLead(source: string | null | undefined): Promise<string | null> {
+  if (!META_AUTO_ASSIGN_ENABLED) return null;
   return isMetaLeadSource(source) ? getNextSalesAssignee() : null;
 }
 

@@ -173,6 +173,22 @@ async function getPendingLeadsCount(where: { assignedToId?: IdFilter } = {}) {
   }).length;
 }
 
+// Same hidden statuses as the default Leads list, so the dashboard card and its list agree.
+const LEAD_LIST_HIDDEN_STATUSES: ("CONVERTED" | "NOT_INTERESTED" | "CLOSED" | "MARRIAGE_FIXED")[] = [
+  "CONVERTED",
+  "NOT_INTERESTED",
+  "CLOSED",
+  "MARRIAGE_FIXED",
+];
+
+// Today in IST (midnight to 23:59:59.999 IST) for the "assigned today" counts.
+function istTodayRange() {
+  const OFFSET = 5.5 * 60 * 60 * 1000;
+  const nowIst = new Date(Date.now() + OFFSET);
+  const startMs = Date.UTC(nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate()) - OFFSET;
+  return { gte: new Date(startMs), lte: new Date(startMs + 24 * 60 * 60 * 1000 - 1) };
+}
+
 export async function getSalesStats(userId: string) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -193,10 +209,10 @@ export async function getSalesStats(userId: string) {
     getProfileAssignmentBreakdown({ assignedToId: userId }),
     getTodaysActivityCount(userId),
     prisma.lead.count({
-      where: { assignedToId: userId, deletedAt: null, assignedAt: { gte: todayStart,lte: todayEnd } },
+      where: { assignedToId: userId, deletedAt: null, status: { notIn: LEAD_LIST_HIDDEN_STATUSES }, assignedAt: istTodayRange() },
     }),
     prisma.lead.count({
-      where: { assignedToId: userId, deletedAt: null, status: "NEW", assignedAt: { gte: todayStart, lte: todayEnd } },
+      where: { assignedToId: userId, deletedAt: null, status: "NEW", assignedAt: istTodayRange() },
     }),
     prisma.lead.count({ where: { assignedToId: userId, deletedAt: null, status: "PENDING" } }),
     getPendingLeadsCount({ assignedToId: userId }),
@@ -249,10 +265,10 @@ export async function getTeamSalesStats(teamIds: string[]) {
     getProfileAssignmentBreakdown({ assignedToId: idFilter }),
     getTodaysActivityCount(idFilter),
     prisma.lead.count({
-      where: { deletedAt: null, assignedToId: idFilter, assignedAt: { gte: todayStart, lte: todayEnd } },
+      where: { deletedAt: null, assignedToId: idFilter, status: { notIn: LEAD_LIST_HIDDEN_STATUSES }, assignedAt: istTodayRange() },
     }),
     prisma.lead.count({
-      where: { deletedAt: null, assignedToId: idFilter, status: "NEW", assignedAt: { gte: todayStart, lte: todayEnd } },
+      where: { deletedAt: null, assignedToId: idFilter, status: "NEW", assignedAt: istTodayRange() },
     }),
     prisma.lead.count({ where: { deletedAt: null, assignedToId: idFilter, status: "PENDING" } }),
     getPendingLeadsCount({ assignedToId: idFilter }),

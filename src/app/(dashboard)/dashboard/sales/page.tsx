@@ -1,3 +1,4 @@
+import { MyStandingCard } from "@/components/widgets/my-standing-card";
 ﻿import { auth } from "@/lib/auth/auth";
 import Link from "next/link";
 import { StatWidget } from "@/components/widgets/stat-widget";
@@ -94,6 +95,8 @@ export default async function SalesDashboardPage() {
         department="SALES"
       />
 
+      <MyStandingCard userId={session!.user.id} />
+
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-1">
@@ -126,7 +129,7 @@ export default async function SalesDashboardPage() {
               </div>
             </Link>
             <Link
-              href="/dashboard/admin/leads?created=today"
+              href="/dashboard/admin/leads?assigned=today"
               className="group relative flex items-center justify-between overflow-hidden rounded-lg border bg-card p-4 pl-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               <span className="absolute inset-y-0 left-0 w-1 bg-blue-500" />
@@ -185,7 +188,7 @@ export default async function SalesDashboardPage() {
           lines={[{ label: "This Total", value: stats.leads.newLeads }]}
           caption={`${stats.newLeadsTodayStatusNew} today`}
           actionLabel="View Leads"
-          actionHref="/dashboard/admin/leads?status=NEW&created=today"
+          actionHref="/dashboard/admin/leads?status=NEW"
         />
         <StatWidget
           title="My Profiles"

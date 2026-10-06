@@ -15,6 +15,7 @@ const EXCLUDED_USER_IDS = [
 // Real staff who are not in a sales role but should still receive leads.
 const INCLUDED_EXTRA_USER_IDS = [
   "cmtikr0sw0007l39ioxk0lgns", // Devender Kumar (SERVICE_MANAGER)
+  "cmtikr0t3000dl39i1d69v61y", // Shahina Sheikh (SERVICE_MANAGER)
 ];
 
 // Same IST day-boundary logic as expire-subscriptions.ts.
