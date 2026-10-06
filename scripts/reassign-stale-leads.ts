@@ -76,6 +76,15 @@ async function getNextInRotation(): Promise<{ id: string; name: string } | null>
   return next;
 }
 
+let runId: string | null = null;
+
+function idleDaysOf(lead: { assignedAt: Date | null; createdAt: Date; remarks: { createdAt: Date }[] }, now: Date): number {
+  const floor = lead.assignedAt ?? lead.createdAt;
+  const r = lead.remarks[0]?.createdAt;
+  const lastTouch = r && r > floor ? r : floor;
+  return Math.floor((now.getTime() - lastTouch.getTime()) / 86400000);
+}
+
 function cutoffDaysForStatus(status: string): number {
   return status === "NOT_INTERESTED" ? 7 : 20;
 }
@@ -128,6 +137,15 @@ async function main() {
     throw new Error("System user not found. Run scripts/create-system-user.ts first.");
   }
 
+  const run = await prisma.staleReassignmentRun.create({
+    data: { candidates: candidates.length, staleFound: stale.length },
+  });
+  runId = run.id;
+  const items: {
+    leadId: string; leadName: string; leadStatus: string; idleDays: number;
+    fromEmployeeId: string | null; toEmployeeId: string | null; outcome: string;
+  }[] = [];
+
   let reassigned = 0;
   let skippedSame = 0;
   let stoppedAtCap = false;
@@ -156,6 +174,7 @@ async function main() {
     }
     if (next.id === lead.assignedToId) {
       skippedSame++;
+      items.push({ leadId: lead.id, leadName: lead.name, leadStatus: String(lead.status), idleDays: idleDaysOf(lead, now), fromEmployeeId: lead.assignedToId, toEmployeeId: next.id, outcome: "SKIPPED_SAME_ASSIGNEE" });
       console.log(`  SKIP (rotation landed on current assignee): ${lead.name} (${lead.id})`);
       continue;
     }
@@ -187,16 +206,30 @@ async function main() {
 
     console.log(`  REASSIGNED: "${lead.name}" (${lead.id}) from ${lead.assignedTo?.name ?? "?"} to ${next.name}`);
     reassigned++;
+    items.push({ leadId: lead.id, leadName: lead.name, leadStatus: String(lead.status), idleDays: idleDaysOf(lead, now), fromEmployeeId: fromId, toEmployeeId: next.id, outcome: "REASSIGNED" });
   }
 
   console.log(
     `[${new Date().toISOString()}] Reassigned ${reassigned} lead(s). Skipped ${skippedSame} (same assignee)${stoppedAtCap ? ". Stopped early: daily cap reached." : "."}`
   );
+  const doneIds = new Set(items.map((i) => i.leadId));
+  const pending = stale.filter((l) => !doneIds.has(l.id));
+  for (const l of pending) {
+    items.push({ leadId: l.id, leadName: l.name, leadStatus: String(l.status), idleDays: idleDaysOf(l, now), fromEmployeeId: l.assignedToId, toEmployeeId: null, outcome: "NOT_PROCESSED_CAP" });
+  }
+  await prisma.staleReassignmentItem.createMany({ data: items.map((i) => ({ ...i, runId: run.id })) });
+  await prisma.staleReassignmentRun.update({
+    where: { id: run.id },
+    data: { finishedAt: new Date(), reassigned, skippedSame, notProcessed: pending.length, stoppedAtCap },
+  });
   await prisma.$disconnect();
 }
 
 main().catch(async (e) => {
   console.error(e);
+  if (runId) {
+    await prisma.staleReassignmentRun.update({ where: { id: runId }, data: { finishedAt: new Date(), error: String((e as Error)?.message ?? e).slice(0, 500) } }).catch(() => {});
+  }
   await prisma.$disconnect();
   process.exit(1);
 });

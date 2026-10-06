@@ -377,6 +377,7 @@ enum LeadStatus {
   WRONG_NUMBER_FAKE_LEAD
   PTP
   PRODUCT_PITCH
+  MARRIAGE_FIXED
 }
 
 model Lead {
@@ -1113,6 +1114,7 @@ enum NotificationType {
   WELCOME_CALL_OVERDUE
   SME_FOLLOWUP
   SME_FOLLOWUP_DONE
+  LEAD_REASSIGNED_STALE
 }
 
 model Notification {
@@ -1548,4 +1550,39 @@ model EnquiryEvent {
   @@index([createdAt])
   @@index([leadId])
   @@map("enquiry_events")
+}
+
+model StaleReassignmentRun {
+  id            String   @id @default(cuid())
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+  dryRun        Boolean  @default(false)
+  candidates    Int      @default(0)
+  staleFound    Int      @default(0)
+  reassigned    Int      @default(0)
+  skippedSame   Int      @default(0)
+  notProcessed  Int      @default(0)
+  stoppedAtCap  Boolean  @default(false)
+  error         String?
+  items         StaleReassignmentItem[]
+
+  @@map("stale_reassignment_runs")
+}
+
+model StaleReassignmentItem {
+  id             String   @id @default(cuid())
+  runId          String
+  run            StaleReassignmentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  leadId         String
+  leadName       String
+  leadStatus     String
+  idleDays       Int
+  fromEmployeeId String?
+  toEmployeeId   String?
+  outcome        String
+  createdAt      DateTime @default(now())
+
+  @@index([runId])
+  @@index([leadId])
+  @@map("stale_reassignment_items")
 }
