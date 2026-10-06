@@ -1,3 +1,5 @@
+import { MyStandingCard } from "@/components/widgets/my-standing-card";
+import { auth } from "@/lib/auth/auth";
 import { DashboardHero } from "@/components/layout/dashboard-hero";
 import { getProfileCreatorDashboard } from "@/actions/profile-queue/profile-queue.actions";
 import Link from "next/link";
@@ -74,6 +76,7 @@ function QueueRow({
 }
 
 export default async function ProfileCreatorDashboard() {
+  const session = await auth();
   const { pending, inProgress, completedToday, returnedForCorrection } = await getProfileCreatorDashboard();
 
   return (
@@ -90,6 +93,8 @@ export default async function ProfileCreatorDashboard() {
           </Link>
         </Button>
       </div>
+
+      <MyStandingCard userId={session!.user.id} />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard label="Pending" value={pending.length} icon={Clock} colorClass="bg-amber-100 text-amber-700" />

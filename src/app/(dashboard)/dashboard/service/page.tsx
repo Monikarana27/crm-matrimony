@@ -1,3 +1,4 @@
+import { MyStandingCard } from "@/components/widgets/my-standing-card";
 ﻿import { auth } from "@/lib/auth/auth";
 import { ensureFollowUpNotifications } from "@/actions/leads/lead.actions";
 import { StatWidget } from "@/components/widgets/stat-widget";
@@ -82,6 +83,8 @@ export default async function ServiceDashboardPage() {
         department="SERVICE"
         extraBadge={session!.user.isSME ? "+SME" : undefined}
       />
+
+      <MyStandingCard userId={session!.user.id} />
 
       <WelcomeCallsHighlight summary={welcomeCalls} />
 
