@@ -202,6 +202,15 @@ async function main() {
           entityId: lead.id,
         },
       }),
+      prisma.notification.create({
+        data: {
+          recipientId: next.id,
+          type: "LEAD_REASSIGNED_STALE",
+          content: `Lead "${lead.name}" was auto-assigned to you (idle ${idleDaysOf(lead, now)} days, previously with ${lead.assignedTo?.name ?? "another employee"}).`,
+          entityType: "LEAD",
+          entityId: lead.id,
+        },
+      }),
     ]);
 
     console.log(`  REASSIGNED: "${lead.name}" (${lead.id}) from ${lead.assignedTo?.name ?? "?"} to ${next.name}`);

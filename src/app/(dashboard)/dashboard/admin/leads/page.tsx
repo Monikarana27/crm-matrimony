@@ -117,6 +117,9 @@ export default async function LeadsPage({
         </div>
         {canAssign && (
           <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/dashboard/admin/leads/stale-reassignments">Reassignment Log</Link>
+            </Button>
             <Button asChild variant="outline" className="relative">
               <Link href="/dashboard/admin/leads/website-enquiries">
                 <Globe className="mr-2 h-4 w-4" />
