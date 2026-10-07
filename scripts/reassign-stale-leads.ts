@@ -117,6 +117,7 @@ async function main() {
     const cutoffDate = new Date(now.getTime() - cutoffDaysForStatus(lead.status) * 24 * 60 * 60 * 1000);
     return lastTouch < cutoffDate;
   });
+  stale.sort((a, b) => idleDaysOf(b, now) - idleDaysOf(a, now));
 
   console.log(
     `[${now.toISOString()}] ${DRY_RUN ? "[DRY RUN] " : ""}Found ${stale.length} stale lead(s) of ${candidates.length} assigned candidate(s).`
@@ -125,7 +126,7 @@ async function main() {
   if (DRY_RUN) {
     for (const lead of stale) {
       const days = cutoffDaysForStatus(lead.status);
-      console.log(`  WOULD REASSIGN: "${lead.name}" (${lead.id}) — status=${lead.status}, idle>=${days}d, currently with ${lead.assignedTo?.name ?? "?"}`);
+      console.log(`  WOULD REASSIGN: "${lead.name}" (${lead.id}) — status=${lead.status}, idle>=${days}d, actually ${idleDaysOf(lead, now)}d, currently with ${lead.assignedTo?.name ?? "?"}`);
     }
     console.log(`[${new Date().toISOString()}] Dry run complete. No writes made.`);
     await prisma.$disconnect();
