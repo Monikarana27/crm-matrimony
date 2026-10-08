@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 const DRY_RUN = process.argv.includes("--dry-run");
 
 const SALES_ROLES = ["SALES", "SALES_TL", "SALES_MANAGER"];
+const FOUNDER_USER_ID = "cmtikr0t3000dl39i1d69v61y"; // Shahina Sheikh (founder): never receives stale leads; her own stale leads can still be reassigned
 const ROTATION_KEY = "auto_assign_sales"; // shared with Meta-lead auto-assignment
 const DAILY_CAP_PER_EMPLOYEE = 7; // this script's own reassignments only, rolling 23h
 // Accounts that no real person uses. Never put leads on these.
@@ -15,7 +16,6 @@ const EXCLUDED_USER_IDS = [
 // Real staff who are not in a sales role but should still receive leads.
 const INCLUDED_EXTRA_USER_IDS = [
   "cmtikr0sw0007l39ioxk0lgns", // Devender Kumar (SERVICE_MANAGER)
-  "cmtikr0t3000dl39i1d69v61y", // Shahina Sheikh (SERVICE_MANAGER)
 ];
 
 // Same IST day-boundary logic as expire-subscriptions.ts.
@@ -37,7 +37,7 @@ async function getEligibleEmployees() {
   const employees = await prisma.user.findMany({
     where: {
       active: true,
-      id: { notIn: EXCLUDED_USER_IDS },
+      id: { notIn: [...EXCLUDED_USER_IDS, FOUNDER_USER_ID] },
       OR: [{ role: { in: SALES_ROLES as never } }, { id: { in: INCLUDED_EXTRA_USER_IDS } }],
     },
     select: { id: true, name: true },
