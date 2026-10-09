@@ -197,21 +197,27 @@ export type ProfileSearchFilters = {
   minAge?: number;
   maxAge?: number;
   religionIds?: string[];
-  casteId?: string;
-  manglik?: string;
-  maritalStatus?: string;
+  casteId?: string | string[];
+  manglik?: string | string[];
+  maritalStatus?: string | string[];
   minHeightCm?: number;
   maxHeightCm?: number;
-  motherTongueId?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  annualIncome?: string;
-  educationField?: string;
-  highestQualification?: string;
-  profession?: string;
+  motherTongueId?: string | string[];
+  country?: string | string[];
+  state?: string | string[];
+  city?: string | string[];
+  annualIncome?: string | string[];
+  educationField?: string | string[];
+  highestQualification?: string | string[];
+  profession?: string | string[];
   paidOnly?: boolean;
+  limit?: number;
 };
+
+function anyOf(v?: string | string[]) {
+  const arr = Array.isArray(v) ? v.filter(Boolean) : v ? [v] : [];
+  return arr.length === 0 ? undefined : arr.length === 1 ? arr[0] : { in: arr };
+}
 
 export async function searchProfilesAction(filters: ProfileSearchFilters) {
   await requireStaff();
@@ -238,24 +244,34 @@ export async function searchProfilesAction(filters: ProfileSearchFilters) {
         : {}),
       ...(filters.gender ? { gender: filters.gender } : {}),
       ...(filters.religionIds && filters.religionIds.length > 0 ? { religionId: { in: filters.religionIds } } : {}),
-      ...(filters.casteId ? { casteId: filters.casteId } : {}),
-      ...(filters.manglik ? { manglik: filters.manglik } : {}),
-      ...(filters.maritalStatus ? { maritalStatus: filters.maritalStatus } : {}),
+      casteId: anyOf(filters.casteId),
+      manglik: anyOf(filters.manglik),
+      maritalStatus: anyOf(filters.maritalStatus),
       ...(filters.minHeightCm !== undefined || filters.maxHeightCm !== undefined
         ? { height: { in: getHeightLabelsInCmRange(filters.minHeightCm, filters.maxHeightCm) } }
         : {}),
-      ...(filters.motherTongueId ? { motherTongueId: filters.motherTongueId } : {}),
-      ...(filters.country ? { country: filters.country } : {}),
-      ...(filters.state ? { state: filters.state } : {}),
-      ...(filters.city ? { city: { contains: filters.city, mode: "insensitive" as const } } : {}),
-      ...(filters.annualIncome ? { annualIncome: filters.annualIncome } : {}),
-      ...(filters.educationField ? { educationField: filters.educationField } : {}),
-      ...(filters.highestQualification ? { highestQualification: filters.highestQualification } : {}),
-      ...(filters.profession ? { profession: filters.profession } : {}),
+      motherTongueId: anyOf(filters.motherTongueId),
+      country: anyOf(filters.country),
+      state: anyOf(filters.state),
+      ...((Array.isArray(filters.city) ? filters.city : filters.city ? [filters.city] : []).length > 0
+        ? {
+            AND: [
+              {
+                OR: (Array.isArray(filters.city) ? filters.city : [filters.city as string]).map((c) => ({
+                  city: { contains: c, mode: "insensitive" as const },
+                })),
+              },
+            ],
+          }
+        : {}),
+      annualIncome: anyOf(filters.annualIncome),
+      educationField: anyOf(filters.educationField),
+      highestQualification: anyOf(filters.highestQualification),
+      profession: anyOf(filters.profession),
       ...(filters.paidOnly ? { subscriptions: { some: { status: "ACTIVE" } } } : {}),
       ...(Object.keys(dobFilter).length > 0 ? { dob: dobFilter } : {}),
     },
-    take: 50,
+    take: Math.min(filters.limit ?? 50, 500),
     orderBy: { createdAt: "desc" },
     include: {
       religion: { select: { name: true } },

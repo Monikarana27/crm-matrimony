@@ -45,6 +45,14 @@ function calcAge(dob: Date | null) {
   return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
 }
 
+function citiesFor(keys: string[]): string[] {
+  const names = keys.flatMap((k) => {
+    const [c, s] = k.split(":");
+    return City.getCitiesOfState(c, s).map((x) => x.name);
+  });
+  return Array.from(new Set(names));
+}
+
 export function ProfileSearchForm({
   religions,
   castes,
@@ -61,39 +69,46 @@ export function ProfileSearchForm({
   const [religionIds, setReligionIds] = useState<string[]>([]);
   const [paidOnly, setPaidOnly] = useState(false);
 
-  const [countryIso, setCountryIso] = useState("");
-  const [stateIso, setStateIso] = useState("");
+  const [multi, setMulti] = useState<Record<string, string[]>>({});
+  function setM(key: string, vals: string[]) {
+    setMulti((m) => ({ ...m, [key]: vals }));
+  }
+  const [countryIsos, setCountryIsos] = useState<string[]>([]);
+  const [stateKeys, setStateKeys] = useState<string[]>([]);
+  const [cityNames, setCityNames] = useState<string[]>([]);
   const countries = useMemo(() => Country.getAllCountries(), []);
   const states = useMemo(
-    () => (countryIso ? State.getStatesOfCountry(countryIso) : []),
-    [countryIso]
+    () =>
+      countryIsos.flatMap((iso) =>
+        State.getStatesOfCountry(iso).map((s) => ({
+          id: `${iso}:${s.isoCode}`,
+          name: countryIsos.length > 1 ? `${s.name} (${iso})` : s.name,
+        }))
+      ),
+    [countryIsos]
   );
-  const cities = useMemo(
-    () => (countryIso && stateIso ? City.getCitiesOfState(countryIso, stateIso) : []),
-    [countryIso, stateIso]
-  );
+  const cities = useMemo(() => citiesFor(stateKeys), [stateKeys]);
 
   function updateFilter(key: string, value: string) {
     setFilters((f) => ({ ...f, [key]: value }));
   }
 
-  function handleCountryChange(iso: string) {
-    const c = countries.find((c) => c.isoCode === iso);
-    setCountryIso(iso);
-    setStateIso("");
-    updateFilter("country", c?.name ?? "");
-    updateFilter("state", "");
-    updateFilter("city", "");
+  function handleCountryChange(isos: string[]) {
+    setCountryIsos(isos);
+    const keys = stateKeys.filter((k) => isos.includes(k.split(":")[0]));
+    setStateKeys(keys);
+    const valid = new Set(citiesFor(keys));
+    setCityNames((c) => c.filter((n) => valid.has(n)));
   }
 
-  function handleStateChange(iso: string) {
-    const s = states.find((s) => s.isoCode === iso);
-    setStateIso(iso);
-    updateFilter("state", s?.name ?? "");
-    updateFilter("city", "");
+  function handleStateChange(keys: string[]) {
+    setStateKeys(keys);
+    const valid = new Set(citiesFor(keys));
+    setCityNames((c) => c.filter((n) => valid.has(n)));
   }
 
   function search() {
+    const arr = (k: string) => (multi[k] && multi[k].length > 0 ? multi[k] : undefined);
     startSearch(async () => {
       const data = await searchProfilesAction({
         search: filters.search || undefined,
@@ -101,19 +116,19 @@ export function ProfileSearchForm({
         minAge: filters.minAge ? parseInt(filters.minAge) : undefined,
         maxAge: filters.maxAge ? parseInt(filters.maxAge) : undefined,
         religionIds: religionIds.length > 0 ? religionIds : undefined,
-        casteId: filters.casteId || undefined,
-        manglik: filters.manglik || undefined,
-        maritalStatus: filters.maritalStatus || undefined,
+        casteId: arr("casteId"),
+        manglik: arr("manglik"),
+        maritalStatus: arr("maritalStatus"),
         minHeightCm: filters.minHeightCm ? parseInt(filters.minHeightCm) : undefined,
         maxHeightCm: filters.maxHeightCm ? parseInt(filters.maxHeightCm) : undefined,
-        motherTongueId: filters.motherTongueId || undefined,
-        country: filters.country || undefined,
-        state: filters.state || undefined,
-        city: filters.city || undefined,
-        annualIncome: filters.annualIncome || undefined,
-        educationField: filters.educationField || undefined,
-        highestQualification: filters.highestQualification || undefined,
-        profession: filters.profession || undefined,
+        motherTongueId: arr("motherTongueId"),
+        country: countryIsos.length > 0 ? countryIsos.map((iso) => countries.find((c) => c.isoCode === iso)?.name ?? iso) : undefined,
+        state: stateKeys.length > 0 ? stateKeys.map((k) => { const [c, s] = k.split(":"); return State.getStateByCodeAndCountry(s, c)?.name ?? s; }) : undefined,
+        city: cityNames.length > 0 ? cityNames : undefined,
+        annualIncome: arr("annualIncome"),
+        educationField: arr("educationField"),
+        highestQualification: arr("highestQualification"),
+        profession: arr("profession"),
         paidOnly: paidOnly || undefined,
       });
       setResults(data as Result[]);
@@ -125,8 +140,10 @@ export function ProfileSearchForm({
     setFilters({});
     setResults([]);
     setSearched(false);
-    setCountryIso("");
-    setStateIso("");
+    setMulti({});
+    setCountryIsos([]);
+    setStateKeys([]);
+    setCityNames([]);
     setReligionIds([]);
     setPaidOnly(false);
   }
@@ -161,13 +178,12 @@ export function ProfileSearchForm({
           <Label>Max Age</Label>
           <Input type="number" value={filters.maxAge ?? ""} onChange={(e) => updateFilter("maxAge", e.target.value)} />
         </div>
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="maritalStatus"
           label="Marital Status"
-          value={filters.maritalStatus ?? ""}
-          onValueChange={(v) => updateFilter("maritalStatus", v)}
+          value={multi.maritalStatus ?? []}
+          onValueChange={(v) => setM("maritalStatus", v)}
           options={MARITAL_STATUS_OPTIONS}
-          placeholder="Any"
         />
         <div className="space-y-2">
           <Label>Min Height</Label>
@@ -187,13 +203,12 @@ export function ProfileSearchForm({
             </SelectContent>
           </Select>
         </div>
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="motherTongueId"
           label="Mother Tongue"
-          value={filters.motherTongueId ?? ""}
-          onValueChange={(v) => updateFilter("motherTongueId", v)}
+          value={multi.motherTongueId ?? []}
+          onValueChange={(v) => setM("motherTongueId", v)}
           options={motherTongues}
-          placeholder="Any"
         />
         <MultiSearchableSelectField
           name="religionIds"
@@ -202,79 +217,68 @@ export function ProfileSearchForm({
           onValueChange={setReligionIds}
           options={religions}
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="casteId"
           label="Caste"
-          value={filters.casteId ?? ""}
-          onValueChange={(v) => updateFilter("casteId", v)}
+          value={multi.casteId ?? []}
+          onValueChange={(v) => setM("casteId", v)}
           options={castes}
-          placeholder="Any"
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="manglik"
           label="Manglik"
-          value={filters.manglik ?? ""}
-          onValueChange={(v) => updateFilter("manglik", v)}
+          value={multi.manglik ?? []}
+          onValueChange={(v) => setM("manglik", v)}
           options={MANGLIK_OPTIONS}
-          placeholder="Any"
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="country"
           label="Country"
-          value={countryIso}
+          value={countryIsos}
           onValueChange={handleCountryChange}
           options={countries.map((c) => ({ id: c.isoCode, name: c.name }))}
-          placeholder="Any"
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="state"
           label="State"
-          value={stateIso}
+          value={stateKeys}
           onValueChange={handleStateChange}
-          options={states.map((s) => ({ id: s.isoCode, name: s.name }))}
-          disabled={!countryIso}
-          placeholder="Any"
+          options={states}
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="city"
           label="City"
-          value={filters.city ?? ""}
-          onValueChange={(v) => updateFilter("city", v)}
-          options={cities.map((c) => c.name)}
-          disabled={!stateIso}
-          placeholder="Any"
+          value={cityNames}
+          onValueChange={setCityNames}
+          options={cities}
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="annualIncome"
           label="Annual Income"
-          value={filters.annualIncome ?? ""}
-          onValueChange={(v) => updateFilter("annualIncome", v)}
+          value={multi.annualIncome ?? []}
+          onValueChange={(v) => setM("annualIncome", v)}
           options={INCOME_RANGES}
-          placeholder="Any"
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="profession"
           label="Profession"
-          value={filters.profession ?? ""}
-          onValueChange={(v) => updateFilter("profession", v)}
+          value={multi.profession ?? []}
+          onValueChange={(v) => setM("profession", v)}
           options={OCCUPATION_OPTIONS}
-          placeholder="Any"
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="educationField"
           label="Education Field"
-          value={filters.educationField ?? ""}
-          onValueChange={(v) => updateFilter("educationField", v)}
+          value={multi.educationField ?? []}
+          onValueChange={(v) => setM("educationField", v)}
           options={EDUCATION_FIELD_OPTIONS}
-          placeholder="Any"
         />
-        <SearchableSelectField
+        <MultiSearchableSelectField
           name="highestQualification"
           label="Education Level"
-          value={filters.highestQualification ?? ""}
-          onValueChange={(v) => updateFilter("highestQualification", v)}
+          value={multi.highestQualification ?? []}
+          onValueChange={(v) => setM("highestQualification", v)}
           options={EDUCATION_LEVEL_OPTIONS}
-          placeholder="Any"
         />
       </div>
 

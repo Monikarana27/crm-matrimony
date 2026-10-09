@@ -411,6 +411,20 @@ export function SharedProfilesTable({
   clientId: string;
 }) {
   const [, startTransition] = useTransition();
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
+  const q = query.trim().toLowerCase();
+  const filteredRows = q
+    ? rows.filter((r) =>
+        r.sharedProfile.name.toLowerCase().includes(q) ||
+        r.sharedProfile.profileCode.toLowerCase().includes(q) ||
+        (r.sharedProfile.email ?? "").toLowerCase().includes(q)
+      )
+    : rows;
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function handleClientChange(id: string, status: any) {
     startTransition(() => updateClientInterestAction(id, status));
@@ -427,6 +441,15 @@ export function SharedProfilesTable({
           </Button>
         </div>
       </div>
+      {rows.length > 0 && (
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+          placeholder="Search prospect by name, ID or email..."
+          className="h-9 w-full max-w-sm rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-1 focus:ring-primary"
+        />
+      )}
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead>
@@ -441,7 +464,7 @@ export function SharedProfilesTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {pagedRows.map((row) => {
               const clientStatus = row.interests[0]?.status ?? "PENDING";
               return (
                 <tr key={row.id} className="border-b last:border-0">
@@ -499,16 +522,28 @@ export function SharedProfilesTable({
                 </tr>
               );
             })}
-            {rows.length === 0 && (
+            {filteredRows.length === 0 && (
               <tr>
                 <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                  No profiles have been shared yet.
+                  {rows.length === 0 ? "No profiles have been shared yet." : "No prospects match your search."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      {filteredRows.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Previous</Button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>Next</Button>
+          </div>
+        </div>
+      )}
       {rows.some((r) => r.prospectStatus === "ACCEPTED" && (r.interests[0]?.status ?? "PENDING") === "ACCEPTED") && (
         <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           One or more matches have mutual acceptance — consider scheduling a meeting.

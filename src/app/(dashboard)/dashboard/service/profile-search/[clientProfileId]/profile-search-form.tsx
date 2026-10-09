@@ -62,6 +62,10 @@ export function ProfileSearchForm({
 }) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Result[]>([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const pagedResults = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const [selected, setSelected] = useState<string[]>([]);
   const [email, setEmail] = useState(clientEmail);
   const [isSearching, startSearch] = useTransition();
@@ -129,8 +133,10 @@ export function ProfileSearchForm({
         educationField: filters.educationField || undefined,
         highestQualification: filters.highestQualification || undefined,
         profession: filters.profession || undefined,
+        limit: 500,
       });
       setResults(data as Result[]);
+      setPage(1);
       setSelected([]);
     });
   }
@@ -138,6 +144,7 @@ export function ProfileSearchForm({
   function reset() {
     setFilters({});
     setResults([]);
+    setPage(1);
     setCountryIso("");
     setStateIso("");
     setReligionIds([]);
@@ -346,7 +353,7 @@ export function ProfileSearchForm({
                 </tr>
               </thead>
               <tbody>
-                {results.map((r) => (
+                {pagedResults.map((r) => (
                   <tr key={r.id} className={`border-b last:border-0 ${alreadySent.has(r.id) ? "bg-muted/40 opacity-60" : ""}`}>
                     <td className="p-3 whitespace-nowrap">
                       <input
@@ -385,6 +392,20 @@ export function ProfileSearchForm({
               </tbody>
             </table>
           </div>
+
+          {results.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, results.length)} of {results.length}
+                {selected.length > 0 ? ` · ${selected.length} selected` : ""}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</Button>
+                <span>Page {page} of {totalPages}</span>
+                <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <Input

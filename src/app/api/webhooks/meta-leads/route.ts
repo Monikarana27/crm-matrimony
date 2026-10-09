@@ -54,7 +54,19 @@ async function handleLead(leadgenId: string) {
   const last = fields["last_name"] ?? "";
   const name = (fields["full_name"] || (first + " " + last).trim() || "Meta Lead").trim();
   const phone = (fields["phone_number"] || fields["phone"] || "").trim();
-  const email = (fields["email"] || "").trim() || null;
+  const EMAIL_RE = /[^\s,;<>()]+@[^\s,;<>()]+\.[^\s,;<>()]+/;
+  let emailKey: string | null = null;
+  let email: string | null = null;
+  for (const [k, v] of Object.entries(fields)) {
+    const m = (v || "").match(EMAIL_RE);
+    if (m && (k.toLowerCase().includes("mail") || k === "email")) { emailKey = k; email = m[0].toLowerCase(); break; }
+  }
+  if (!email) {
+    for (const [k, v] of Object.entries(fields)) {
+      const m = (v || "").match(EMAIL_RE);
+      if (m) { emailKey = k; email = m[0].toLowerCase(); break; }
+    }
+  }
 
   if (!phone) {
     console.error("Meta lead without phone, skipped", leadgenId);
@@ -63,7 +75,7 @@ async function handleLead(leadgenId: string) {
 
   const known = new Set(["full_name", "first_name", "last_name", "phone_number", "phone", "email"]);
   const noteLines = Object.entries(fields)
-    .filter(([k]) => !known.has(k))
+    .filter(([k]) => !known.has(k) && k !== emailKey)
     .map(([k, v]) => k.replace(/_/g, " ") + ": " + v);
   const meta = [
     data.campaign_name ? "Campaign: " + data.campaign_name : "",
@@ -77,6 +89,9 @@ async function handleLead(leadgenId: string) {
 
   const existing = await findExistingLeadByPhone(phone);
   if (existing) {
+    if (email) {
+      await prisma.lead.updateMany({ where: { id: existing.id, email: null }, data: { email } });
+    }
     await prisma.leadRemark.create({
       data: {
         leadId: existing.id,
