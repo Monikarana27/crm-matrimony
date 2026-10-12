@@ -50,7 +50,7 @@ export function FunnelBreakdown({
                   </span>
                 </span>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
                 <div
                   className={cn("h-full rounded-full", row.barColorClass)}
                   style={{ width: `${Math.min(pct, 100)}%` }}

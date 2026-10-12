@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,8 @@ export function SearchableCombobox({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const selected = options.find((o) => o.value === value);
 
   const filtered = useMemo(() => {
@@ -60,6 +62,7 @@ export function SearchableCombobox({
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
+    if (next) setContainer(wrapperRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null);
     if (!next) setSearch("");
   }
 
@@ -71,6 +74,7 @@ export function SearchableCombobox({
   }
 
   return (
+    <div ref={wrapperRef} className="w-full">
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         render={
@@ -96,7 +100,7 @@ export function SearchableCombobox({
           </Button>
         }
       />
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent container={container ?? undefined} className="w-[--radix-popover-trigger-width] p-0">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder ?? "Search..."}
@@ -144,5 +148,6 @@ export function SearchableCombobox({
         </Command>
       </PopoverContent>
     </Popover>
+    </div>
   );
 }

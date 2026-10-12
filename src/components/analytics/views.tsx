@@ -41,7 +41,7 @@ const rates = (ls: L[]) => ({
   conv: ls.filter(isConv).length,
   lost: ls.filter(isLost).length,
   junk: ls.filter((l) => l.state === "WRONG_NUMBER" || l.state === "DUPLICATE").length,
-  never: ls.filter((l) => l.touches === 0).length,
+  never: ls.filter((l) => l.touches === 0 && !l.edited).length,
 });
 
 // ================= OVERVIEW =================
@@ -50,7 +50,7 @@ function buildInsights(ls: L[]) {
   const n = ls.length;
   if (n < 30) return [{ tone: "info" as Tone, title: "Too few leads here to draw firm conclusions", body: "Widen the window or switch to all leads." }];
   const r = rates(ls);
-  const openUntouched = ls.filter((l) => l.touches === 0 && isOpen(l)).length;
+  const openUntouched = ls.filter((l) => l.touches === 0 && !l.edited && isOpen(l)).length;
   if (openUntouched > 0)
     out.push({
       tone: "bad",
@@ -90,7 +90,7 @@ export function Overview({ ls, now }: VP) {
   const lost = kindTotal(b, ["waste", "junk"]);
   const junk = kindTotal(b, ["junk"]);
   const open = kindTotal(b, ["open", "neutral"]);
-  const never = ls.filter((l) => l.touches === 0).length;
+  const never = ls.filter((l) => l.touches === 0 && !l.edited).length;
   const contacted = ls.filter((l) => l.touches > 0 || isConv(l)).length;
   const spoke = ls.filter((l) => (l.touches > 0 || isConv(l)) && l.state !== "NOT_REACHABLE" && l.state !== "WRONG_NUMBER" && l.state !== "DUPLICATE").length;
   const insights = buildInsights(ls);

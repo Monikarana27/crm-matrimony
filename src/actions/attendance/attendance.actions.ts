@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { revalidatePath } from "next/cache";
+import { computeExpectedLeaveMs, RESUME_WINDOW_MINUTES } from "@/lib/attendance/expected-leave";
 
 function startOfToday(): Date {
   const d = new Date();
@@ -87,6 +88,40 @@ export async function selfCheckOutAction() {
   await prisma.attendance.update({
     where: { userId_date: { userId: session.user.id, date } },
     data: { checkOut: new Date() },
+  });
+  revalidatePath("/", "layout");
+  return { error: null };
+}
+
+export async function resumeDayAction() {
+  const session = await requireUser();
+  const date = startOfToday();
+  const existing = await prisma.attendance.findUnique({
+    where: { userId_date: { userId: session.user.id, date } },
+  });
+  if (!existing?.checkOut) return { error: "Your day hasn't been ended" };
+  if (!existing.checkIn) return { error: "You haven't checked in today" };
+
+  const expectedLeaveMs = computeExpectedLeaveMs(
+    existing.checkIn.getTime(),
+    existing.breakStart ? existing.breakStart.getTime() : null,
+    existing.breakEnd ? existing.breakEnd.getTime() : null,
+    existing.checkOut.getTime()
+  );
+  if (existing.checkOut.getTime() >= expectedLeaveMs) {
+    return { error: "You have completed your full day, so there is nothing to resume" };
+  }
+
+  const minutesSince = (Date.now() - existing.checkOut.getTime()) / 60000;
+  if (minutesSince > RESUME_WINDOW_MINUTES) {
+    return {
+      error: `You can only resume within ${RESUME_WINDOW_MINUTES} minutes of ending your day. Please ask an admin to correct it.`,
+    };
+  }
+
+  await prisma.attendance.update({
+    where: { userId_date: { userId: session.user.id, date } },
+    data: { checkOut: null, resumedCount: { increment: 1 } },
   });
   revalidatePath("/", "layout");
   return { error: null };

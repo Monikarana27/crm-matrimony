@@ -201,6 +201,64 @@ export async function deleteSubscriptionAction(subscriptionId: string) {
   revalidatePath("/dashboard/admin/expired-clients");
 }
 
+export async function editSubscriptionAction(
+  subscriptionId: string,
+  data: { planId: string; startDate: string; endDate: string }
+) {
+  const session = await requireStaff();
+  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+    throw new Error("Only admins can edit a subscription.");
+  }
+
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(data.startDate) || !datePattern.test(data.endDate)) {
+    throw new Error("Please enter valid start and end dates.");
+  }
+
+  // Dates are entered as IST calendar days: start = 00:00 IST, end = 23:59:59 IST
+  const startDate = new Date(`${data.startDate}T00:00:00+05:30`);
+  const endDate = new Date(`${data.endDate}T23:59:59+05:30`);
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    throw new Error("Please enter valid start and end dates.");
+  }
+  if (endDate <= startDate) {
+    throw new Error("End date must be after the start date.");
+  }
+
+  const existing = await prisma.subscription.findUnique({
+    where: { id: subscriptionId },
+    include: { plan: { select: { name: true } } },
+  });
+  if (!existing) {
+    throw new Error("Subscription not found.");
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: data.planId },
+    select: { id: true, name: true },
+  });
+  if (!plan) {
+    throw new Error("Selected plan not found.");
+  }
+
+  const actingUserId = await getActingUserId(session);
+
+  await prisma.subscription.update({
+    where: { id: subscriptionId },
+    data: { planId: plan.id, startDate, endDate },
+  });
+
+  const istDay = (d: Date | null) =>
+    d ? new Date(d.getTime() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10) : "none";
+  await logActivity(
+    actingUserId,
+    `EDIT_SUBSCRIPTION plan ${existing.plan.name} -> ${plan.name}; start ${istDay(existing.startDate)} -> ${data.startDate}; end ${istDay(existing.endDate)} -> ${data.endDate}`,
+    subscriptionId
+  );
+
+  revalidatePath("/dashboard/admin/subscriptions");
+}
+
 export async function getPausedSubscriptions() {
   const session = await requireStaff();
   const scopedFilter = !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)

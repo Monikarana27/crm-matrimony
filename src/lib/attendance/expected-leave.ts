@@ -27,3 +27,6 @@ export function computeExpectedLeaveMs(
 
   return startMs + WORK_MS + Math.max(breakMs, MIN_BREAK_MS);
 }
+
+// Employees can undo an accidental "End Day" within this many minutes
+export const RESUME_WINDOW_MINUTES = 30;

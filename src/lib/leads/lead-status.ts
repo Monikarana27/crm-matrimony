@@ -14,6 +14,7 @@ export const LEAD_STATUS_OPTIONS = [
   "NO_NOT_EXIST",
   "WRONG_NUMBER_FAKE_LEAD",
   "CLOSED",
+  "MARRIAGE_FIXED",
 ] as const;
 
 export type LeadStatusOption = (typeof LEAD_STATUS_OPTIONS)[number];
@@ -34,6 +35,7 @@ export const LEAD_STATUS_LABELS: Record<string, string> = {
   NO_NOT_EXIST: "No / Doesn't Exist",
   WRONG_NUMBER_FAKE_LEAD: "Wrong Number / Fake Lead",
   CLOSED: "Closed",
+  MARRIAGE_FIXED: "Marriage Fixed",
 };
 
 export const LEAD_STATUS_STYLES: Record<string, string> = {
@@ -52,4 +54,5 @@ export const LEAD_STATUS_STYLES: Record<string, string> = {
   NO_NOT_EXIST: "bg-gray-100 text-gray-700 border-gray-200",
   WRONG_NUMBER_FAKE_LEAD: "bg-gray-100 text-gray-700 border-gray-200",
   CLOSED: "bg-gray-100 text-gray-700 border-gray-200",
+  MARRIAGE_FIXED: "bg-pink-100 text-pink-700 border-pink-200",
 };

@@ -211,6 +211,7 @@ export type L = {
   hasEmail: boolean;
   hasGender: boolean;
   touches: number;
+  edited: boolean;
   firstTouchMs: number | null;
   lastTouch: number;
   repeats: number;
@@ -242,6 +243,14 @@ export async function loadLeads() {
       orderBy: { createdAt: "asc" },
     }),
   ]);
+
+  // Status/field edits by non-admin staff count as work even when no remark was logged.
+  const staffRows = await prisma.user.findMany({ where: { role: { notIn: ["ADMIN", "SUPER_ADMIN"] as never } }, select: { id: true } });
+  const editLogs = await prisma.activityLog.findMany({
+    where: { action: { in: ["UPDATE_LEAD", "UPDATE_LEAD_STATUS"] }, actorId: { in: staffRows.map((u) => u.id) } },
+    select: { entityId: true },
+  });
+  const editedSet = new Set(editLogs.map((e) => String(e.entityId)));
 
   type RM = { n: number; first: number; last: number; lastOutcome: string };
   const rm = new Map<string, RM>();
@@ -302,6 +311,7 @@ export async function loadLeads() {
       hasEmail: !!(r.email ?? "").trim(),
       hasGender: !!r.gender,
       touches: m?.n ?? 0,
+      edited: editedSet.has(id),
       firstTouchMs: m ? Math.max(0, m.first - t) : null,
       lastTouch: m ? m.last : t,
       repeats: repeatBy.get(id) ?? 0,

@@ -44,7 +44,7 @@ export function AttendanceFilters({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-white p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-slate-600">From</label>
         <input

@@ -34,12 +34,12 @@ export default async function AdminSalesDashboardPage() {
   const needsAttention = await getSalesNeedsAttention();
   const followUpsDue = await getOrgFollowUpsDueToday();
   const funnelRows = [
-    { label: "New Lead", value: pipeline.newLead, total: pipeline.total, colorClass: "border-blue-400 bg-blue-50", barColorClass: "bg-blue-500", href: `${LEADS}?status=NEW` },
-    { label: "Contacted", value: pipeline.contacted, total: pipeline.total, colorClass: "border-cyan-400 bg-cyan-50", barColorClass: "bg-cyan-500", href: `${LEADS}?status=CONTACTED` },
-    { label: "Interested", value: pipeline.interested, total: pipeline.total, colorClass: "border-indigo-400 bg-indigo-50", barColorClass: "bg-indigo-500", href: `${LEADS}?status=INTERESTED` },
-    { label: "Follow-up", value: pipeline.followUp, total: pipeline.total, colorClass: "border-amber-400 bg-amber-50", barColorClass: "bg-amber-500", href: `${LEADS}?status=PENDING` },
-    { label: "Converted", value: pipeline.converted, total: pipeline.total, colorClass: "border-emerald-400 bg-emerald-50", barColorClass: "bg-emerald-500", href: `${LEADS}?status=CONVERTED` },
-    { label: "Lost", value: pipeline.lost, total: pipeline.total, colorClass: "border-red-400 bg-red-50", barColorClass: "bg-red-500", href: `${LEADS}?status=NOT_INTERESTED` },
+    { label: "New Lead", value: pipeline.newLead, total: pipeline.total, colorClass: "border-blue-400 bg-blue-50 dark:bg-blue-500/10", barColorClass: "bg-blue-500", href: `${LEADS}?status=NEW` },
+    { label: "Contacted", value: pipeline.contacted, total: pipeline.total, colorClass: "border-cyan-400 bg-cyan-50 dark:bg-cyan-500/10", barColorClass: "bg-cyan-500", href: `${LEADS}?status=CONTACTED` },
+    { label: "Interested", value: pipeline.interested, total: pipeline.total, colorClass: "border-indigo-400 bg-indigo-50 dark:bg-indigo-500/10", barColorClass: "bg-indigo-500", href: `${LEADS}?status=INTERESTED` },
+    { label: "Follow-up", value: pipeline.followUp, total: pipeline.total, colorClass: "border-amber-400 bg-amber-50 dark:bg-amber-500/10", barColorClass: "bg-amber-500", href: `${LEADS}?status=PENDING` },
+    { label: "Converted", value: pipeline.converted, total: pipeline.total, colorClass: "border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10", barColorClass: "bg-emerald-500", href: `${LEADS}?status=CONVERTED` },
+    { label: "Lost", value: pipeline.lost, total: pipeline.total, colorClass: "border-red-400 bg-red-50 dark:bg-red-500/10", barColorClass: "bg-red-500", href: `${LEADS}?status=NOT_INTERESTED` },
   ];
 
   const quickActions = [

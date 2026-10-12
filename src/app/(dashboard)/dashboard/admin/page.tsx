@@ -33,16 +33,16 @@ type Tone = "red" | "amber";
 
 const TONE: Record<Tone, { card: string; chip: string; icon: string; number: string }> = {
   red: {
-    card: "border-red-200 border-l-4 border-l-red-500 bg-red-50/70 hover:bg-red-50",
-    chip: "bg-red-100",
-    icon: "text-red-600",
-    number: "text-red-700",
+    card: "border-red-200 border-l-4 border-l-red-500 bg-red-50/70 hover:bg-red-50 dark:border-red-500/30 dark:border-l-red-500 dark:bg-red-500/10 dark:hover:bg-red-500/15",
+    chip: "bg-red-100 dark:bg-red-500/20",
+    icon: "text-red-600 dark:text-red-400",
+    number: "text-red-700 dark:text-red-400",
   },
   amber: {
-    card: "border-amber-200 border-l-4 border-l-amber-500 bg-amber-50/70 hover:bg-amber-50",
-    chip: "bg-amber-100",
-    icon: "text-amber-600",
-    number: "text-amber-700",
+    card: "border-amber-200 border-l-4 border-l-amber-500 bg-amber-50/70 hover:bg-amber-50 dark:border-amber-500/30 dark:border-l-amber-500 dark:bg-amber-500/10 dark:hover:bg-amber-500/15",
+    chip: "bg-amber-100 dark:bg-amber-500/20",
+    icon: "text-amber-600 dark:text-amber-400",
+    number: "text-amber-700 dark:text-amber-400",
   },
 };
 
@@ -71,7 +71,7 @@ function AttentionCard({ item }: { item: AttentionItem }) {
         <span
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-lg",
-            active ? tone.chip : "bg-emerald-50"
+            active ? tone.chip : "bg-emerald-50 dark:bg-emerald-500/15"
           )}
         >
           <Icon className={cn("h-5 w-5", active ? tone.icon : "text-emerald-600")} />
@@ -199,56 +199,56 @@ export default async function AdminDashboardPage() {
       label: "New Leads",
       value: stats.leads.newLeads,
       total: funnelTotal,
-      colorClass: "border-blue-400 bg-blue-50",
+      colorClass: "border-blue-400 bg-blue-50 dark:bg-blue-500/10",
       barColorClass: "bg-blue-500",
     },
     {
       label: "Contacted Leads",
       value: stats.leads.contactedLeads,
       total: funnelTotal,
-      colorClass: "border-cyan-400 bg-cyan-50",
+      colorClass: "border-cyan-400 bg-cyan-50 dark:bg-cyan-500/10",
       barColorClass: "bg-cyan-500",
     },
     {
       label: "Converted Leads",
       value: stats.leads.convertedLeads,
       total: funnelTotal,
-      colorClass: "border-emerald-400 bg-emerald-50",
+      colorClass: "border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10",
       barColorClass: "bg-emerald-500",
     },
     {
       label: "Pending Follow-ups",
       value: stats.leads.pendingLeads,
       total: funnelTotal,
-      colorClass: "border-amber-400 bg-amber-50",
+      colorClass: "border-amber-400 bg-amber-50 dark:bg-amber-500/10",
       barColorClass: "bg-amber-500",
     },
     {
       label: "Not Interested",
       value: stats.leads.notInterestedLeads,
       total: funnelTotal,
-      colorClass: "border-red-400 bg-red-50",
+      colorClass: "border-red-400 bg-red-50 dark:bg-red-500/10",
       barColorClass: "bg-red-500",
     },
     {
       label: "Assigned Profiles",
       value: stats.profileAssignment.assigned,
       total: profileFunnelTotal,
-      colorClass: "border-violet-400 bg-violet-50",
+      colorClass: "border-violet-400 bg-violet-50 dark:bg-violet-500/10",
       barColorClass: "bg-violet-500",
     },
     {
       label: "Re-assigned Profiles",
       value: stats.profileAssignment.reassigned,
       total: profileFunnelTotal,
-      colorClass: "border-purple-400 bg-purple-50",
+      colorClass: "border-purple-400 bg-purple-50 dark:bg-purple-500/10",
       barColorClass: "bg-purple-500",
     },
     {
       label: "Unassigned Profiles",
       value: stats.profileAssignment.unassigned,
       total: profileFunnelTotal,
-      colorClass: "border-gray-400 bg-gray-50",
+      colorClass: "border-gray-400 bg-gray-50 dark:bg-gray-500/10",
       barColorClass: "bg-gray-500",
     },
   ];
@@ -332,11 +332,11 @@ export default async function AdminDashboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Needs Attention</h2>
           {openCount > 0 ? (
-            <Badge variant="outline" className="border-red-200 bg-red-100 text-red-700">
+            <Badge variant="outline" className="border-red-200 bg-red-100 text-red-700 dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-300">
               {openCount} need{openCount === 1 ? "s" : ""} action
             </Badge>
           ) : (
-            <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-100 text-emerald-700">
+            <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5" />
               All clear
             </Badge>

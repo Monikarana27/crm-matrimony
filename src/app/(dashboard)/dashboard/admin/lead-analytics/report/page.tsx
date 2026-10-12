@@ -52,7 +52,7 @@ const agg = (ls: L[]) => ({
   conv: ls.filter(isConv).length,
   lost: ls.filter(isLost).length,
   junk: ls.filter((l) => l.state === "WRONG_NUMBER" || l.state === "DUPLICATE").length,
-  never: ls.filter((l) => l.touches === 0).length,
+  never: ls.filter((l) => l.touches === 0 && !l.edited).length,
   web: ls.filter((l) => l.isWeb).length,
 });
 
@@ -100,6 +100,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
   const pa = agg(prev);
   const b = bucketCounts(ls);
   const n = ls.length;
+  const drill = (kind: string) => `/dashboard/admin/lead-analytics/report/leads?kind=${kind}&from=${from}&to=${to}&scope=${scope}`;
 
   // ---------- Summary findings ----------
   const bySrc = Array.from(groupBy(ls, (l) => l.channel).entries())
@@ -284,10 +285,10 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
       {show("summary") && (
         <div className="keep space-y-4">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Stat label="Leads received" value={n0(a.n)} sub={cmpSub(a.n, pa.n, n0)} />
-            <Stat label="Converted" value={n0(a.conv)} sub={compare ? `${ps(a.conv, a.n)} of leads · previous ${ps(pa.conv, pa.n)}` : `${ps(a.conv, a.n)} of leads`} tone="good" />
-            <Stat label="Wasted" value={ps(a.lost, a.n)} sub={compare ? `${n0(a.lost)} leads · previous ${ps(pa.lost, pa.n)}` : `${n0(a.lost)} leads`} tone="bad" />
-            <Stat label="Never contacted" value={n0(a.never)} sub={cmpSub(a.never, pa.never, n0)} tone={a.never > 0 ? "warn" : "good"} />
+            <Link href={drill("received")} className="block transition hover:opacity-90"><Stat label="Leads received" value={n0(a.n)} sub={cmpSub(a.n, pa.n, n0)} /></Link>
+            <Link href={drill("converted")} className="block transition hover:opacity-90"><Stat label="Converted" value={n0(a.conv)} sub={compare ? `${ps(a.conv, a.n)} of leads · previous ${ps(pa.conv, pa.n)}` : `${ps(a.conv, a.n)} of leads`} tone="good" /></Link>
+            <Link href={drill("wasted")} className="block transition hover:opacity-90"><Stat label="Wasted" value={ps(a.lost, a.n)} sub={compare ? `${n0(a.lost)} leads · previous ${ps(pa.lost, pa.n)}` : `${n0(a.lost)} leads`} tone="bad" /></Link>
+            <Link href={drill("never")} className="block transition hover:opacity-90"><Stat label="Never contacted" value={n0(a.never)} sub={cmpSub(a.never, pa.never, n0)} tone={a.never > 0 ? "warn" : "good"} /></Link>
           </div>
           <Section title="Key findings" why="Plain-English points from this period's data.">
             <ul className="list-disc space-y-1 pl-5 text-sm">

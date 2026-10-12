@@ -288,8 +288,8 @@ export function LeadsTable({
   function rowClassName(row: LeadRow) {
     if (!bounds) return "";
     const b = bucketOf(row, bounds);
-    if (b === "overdue") return "border-l-4 border-l-red-500 bg-red-50 hover:bg-red-100/70";
-    if (b === "today") return "border-l-4 border-l-amber-500 bg-amber-50 hover:bg-amber-100/70";
+    if (b === "overdue") return "border-l-4 border-l-red-500 bg-red-50 hover:bg-red-100/70 dark:bg-red-500/10 dark:hover:bg-red-500/20";
+    if (b === "today") return "border-l-4 border-l-amber-500 bg-amber-50 hover:bg-amber-100/70 dark:bg-amber-500/10 dark:hover:bg-amber-500/20";
     return "";
   }
 

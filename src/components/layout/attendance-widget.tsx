@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DayCountdown } from "@/components/layout/day-countdown";
+import { computeExpectedLeaveMs, RESUME_WINDOW_MINUTES } from "@/lib/attendance/expected-leave";
 import {
   selfCheckInAction,
   startBreakAction,
   endBreakAction,
   selfCheckOutAction,
+  resumeDayAction,
 } from "@/actions/attendance/attendance.actions";
 type Attendance = {
   checkIn: Date | null;
@@ -34,10 +36,28 @@ export function AttendanceWidget({ attendance }: { attendance: Attendance }) {
   }
   const onBreak = !!attendance?.breakStart && !attendance?.breakEnd;
   if (attendance?.checkOut) {
+    const checkOutMs = new Date(attendance.checkOut).getTime();
+    const expectedLeaveMs = attendance.checkIn
+      ? computeExpectedLeaveMs(
+          new Date(attendance.checkIn).getTime(),
+          attendance.breakStart ? new Date(attendance.breakStart).getTime() : null,
+          attendance.breakEnd ? new Date(attendance.breakEnd).getTime() : null,
+          checkOutMs
+        )
+      : 0;
+    const endedEarly = checkOutMs < expectedLeaveMs;
+    const withinWindow = Date.now() - checkOutMs <= RESUME_WINDOW_MINUTES * 60 * 1000;
     return (
-      <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200">
-        Day complete · {fmt(attendance.checkOut)}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200">
+          Day ended · {fmt(attendance.checkOut)}
+        </Badge>
+        {endedEarly && withinWindow && (
+          <Button size="sm" variant="outline" disabled={isPending} onClick={() => run(resumeDayAction)}>
+            Resume Day
+          </Button>
+        )}
+      </div>
     );
   }
   if (onBreak) {

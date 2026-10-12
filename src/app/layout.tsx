@@ -3,6 +3,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ChunkErrorHandler } from "@/components/chunk-error-handler";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "next-themes";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -29,9 +30,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${fraunces.variable} ${jakarta.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning><ChunkErrorHandler />{children}<Toaster position="top-right" richColors closeButton /></body>
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <ChunkErrorHandler />
+          {children}
+          <Toaster position="top-right" richColors closeButton />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

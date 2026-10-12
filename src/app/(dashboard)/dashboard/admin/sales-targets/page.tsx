@@ -27,6 +27,11 @@ export default async function SalesTargetsPage({
         title="Sales Targets"
         subtitle={`Monthly performance targets — ${monthLabel}`}
       />
+      <div className="flex justify-end">
+        <a href="/dashboard/admin/sales-targets/report" className="text-sm font-medium text-primary hover:underline">
+          View full Target Report →
+        </a>
+      </div>
       <SalesTargetsGrid
         targets={targets}
         selectedMonth={selectedMonth}

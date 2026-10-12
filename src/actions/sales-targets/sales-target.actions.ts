@@ -181,6 +181,107 @@ export async function getMyTarget(month: number, year: number) {
   };
 }
 
+/**
+ * Flat employee x month report over a date range, for the admin
+ * Sales Targets report page. Skips employee/month pairs with neither
+ * a target nor a logged achievement, to keep the table clean.
+ */
+export async function getTargetReport(params: {
+  startMonth: number;
+  startYear: number;
+  endMonth: number;
+  endYear: number;
+}) {
+  await requireAdmin();
+
+  const { startMonth, startYear, endMonth, endYear } = params;
+  const startKey = startYear * 12 + (startMonth - 1);
+  const endKey = endYear * 12 + (endMonth - 1);
+
+  if (endKey < startKey) {
+    throw new Error("End date must be on or after the start date");
+  }
+  if (endKey - startKey > 60) {
+    throw new Error("Date range too large (max 5 years)");
+  }
+
+  const employees = await prisma.user.findMany({
+    where: { active: true, role: { in: ["SALES", "SERVICE", ...TEAM_SCOPED_ROLES] } },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+  const employeeIds = employees.map((e) => e.id);
+  if (employeeIds.length === 0) return [];
+
+  const inRange = (month: number, year: number) => {
+    const key = year * 12 + (month - 1);
+    return key >= startKey && key <= endKey;
+  };
+
+  const [targets, achievements] = await Promise.all([
+    prisma.salesTarget.findMany({ where: { userId: { in: employeeIds } } }),
+    prisma.achievement.findMany({
+      where: { userId: { in: employeeIds } },
+      select: { userId: true, month: true, year: true, amount: true },
+    }),
+  ]);
+
+  const targetMap = new Map<string, number>();
+  for (const t of targets) {
+    if (inRange(t.month, t.year)) {
+      targetMap.set(`${t.userId}-${t.year}-${t.month}`, t.targetAmount);
+    }
+  }
+
+  const achievedMap = new Map<string, number>();
+  for (const a of achievements) {
+    if (inRange(a.month, a.year)) {
+      const key = `${a.userId}-${a.year}-${a.month}`;
+      achievedMap.set(key, (achievedMap.get(key) ?? 0) + a.amount);
+    }
+  }
+
+  const months: { month: number; year: number }[] = [];
+  for (let key = startKey; key <= endKey; key++) {
+    months.push({ year: Math.floor(key / 12), month: (key % 12) + 1 });
+  }
+
+  const rows: {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    month: number;
+    year: number;
+    targetAmount: number | null;
+    achievedAmount: number;
+  }[] = [];
+
+  for (const emp of employees) {
+    for (const { month, year } of months) {
+      const key = `${emp.id}-${year}-${month}`;
+      const targetAmount = targetMap.get(key) ?? null;
+      const achievedAmount = achievedMap.get(key) ?? 0;
+      if (targetAmount === null && achievedAmount === 0) continue;
+      rows.push({
+        id: key,
+        employeeId: emp.id,
+        employeeName: emp.name,
+        month,
+        year,
+        targetAmount,
+        achievedAmount,
+      });
+    }
+  }
+
+  rows.sort(
+    (a, b) =>
+      a.employeeName.localeCompare(b.employeeName) || a.year - b.year || a.month - b.month
+  );
+
+  return rows;
+}
+
 export async function setSalesTargetAction(
   _prevState: unknown,
   formData: FormData

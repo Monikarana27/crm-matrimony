@@ -966,6 +966,7 @@ model Attendance {
   checkOut   DateTime?
   breakStart DateTime?
   breakEnd   DateTime?
+  resumedCount Int            @default(0)
   createdAt  DateTime         @default(now())
 
   @@unique([userId, date])

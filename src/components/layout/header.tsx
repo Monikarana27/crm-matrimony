@@ -15,6 +15,7 @@ import { LogOut, User } from "lucide-react";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { ScrollHeaderShell } from "@/components/layout/scroll-header-shell";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { AttendanceWidget } from "@/components/layout/attendance-widget";
 import { getMyTodayAttendance } from "@/actions/attendance/attendance.actions";
 import type { Role } from "@/lib/permissions/roles";
@@ -47,6 +48,7 @@ export async function Header({ role }: { role: Role }) {
       <div className="flex items-center gap-3">
       <AttendanceWidget attendance={attendance} />
       <NotificationBell role={role} />
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-3 rounded-full py-1 pl-2 pr-1 outline-none transition-colors hover:bg-muted">
           <div className="flex flex-col items-end leading-tight">

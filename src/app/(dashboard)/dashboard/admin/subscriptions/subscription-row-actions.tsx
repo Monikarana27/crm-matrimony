@@ -8,11 +8,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, MessageSquareText, History, PauseCircle, PlayCircle, RefreshCw, Receipt } from "lucide-react";
+import { MoreHorizontal, MessageSquareText, History, PauseCircle, PlayCircle, RefreshCw, Receipt, Pencil } from "lucide-react";
 import { SubscriptionAddCommentDialog } from "@/components/subscriptions/subscription-add-comment-dialog";
 import { SubscriptionCommentHistoryDialog } from "@/components/subscriptions/subscription-comment-history-dialog";
 import { SubscriptionPauseDialog } from "@/components/subscriptions/subscription-pause-dialog";
 import { SubscriptionRenewDialog } from "@/components/subscriptions/subscription-renew-dialog";
+import { SubscriptionEditDialog } from "@/components/subscriptions/subscription-edit-dialog";
 import { SubscriptionPaymentHistoryDialog } from "@/components/subscriptions/subscription-payment-history-dialog";
 import { DeleteRowButton } from "@/components/shared/delete-row-button";
 import { deleteSubscriptionAction, resumeSubscriptionAction } from "@/actions/subscriptions/subscription.actions";
@@ -22,6 +23,9 @@ type SubscriptionForActions = {
   followUpDate: Date | null;
   isPaused: boolean;
   pauseDays: number | null;
+  startDate: Date;
+  endDate: Date | null;
+  plan: { id: string; name: string };
   profile: { id: string; name: string };
 };
 
@@ -30,6 +34,7 @@ export function SubscriptionRowActions({ subscription, isAdmin = false }: { subs
   const [historyOpen, setHistoryOpen] = useState(false);
   const [pauseOpen, setPauseOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
   const [isResuming, setIsResuming] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
@@ -59,6 +64,12 @@ export function SubscriptionRowActions({ subscription, isAdmin = false }: { subs
             <DropdownMenuItem onSelect={() => setRenewOpen(true)} className="text-blue-700 focus:text-blue-700">
               <RefreshCw className="mr-2 h-3.5 w-3.5" />
               Renew / Extend Service
+            </DropdownMenuItem>
+          )}
+          {isAdmin && (
+            <DropdownMenuItem onSelect={() => setEditOpen(true)} className="text-slate-700 focus:text-slate-700">
+              <Pencil className="mr-2 h-3.5 w-3.5" />
+              Edit Subscription
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => setPaymentHistoryOpen(true)} className="text-indigo-700 focus:text-indigo-700">
@@ -120,6 +131,18 @@ export function SubscriptionRowActions({ subscription, isAdmin = false }: { subs
         open={paymentHistoryOpen}
         onOpenChange={setPaymentHistoryOpen}
       />
+      {isAdmin && (
+        <SubscriptionEditDialog
+          subscriptionId={subscription.id}
+          profileName={subscription.profile.name}
+          currentPlanId={subscription.plan.id}
+          currentPlanName={subscription.plan.name}
+          startDate={subscription.startDate}
+          endDate={subscription.endDate}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+      )}
       {isAdmin && (
         <DeleteRowButton
           onDelete={() => deleteSubscriptionAction(subscription.id)}

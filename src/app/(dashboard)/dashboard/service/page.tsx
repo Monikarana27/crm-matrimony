@@ -138,6 +138,8 @@ export default async function ServiceDashboardPage() {
           icon={UserPlus}
           accentColor="blue"
           lines={[{ label: "New", value: stats.leads.newLeads }]}
+          actionLabel="View Leads"
+          actionHref="/dashboard/admin/leads?status=NEW"
         />
         <StatWidget
           title="Converted Leads"
