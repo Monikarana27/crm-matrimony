@@ -4,6 +4,8 @@ import { ensureFollowUpNotifications } from "@/actions/leads/lead.actions";
 import { StatWidget } from "@/components/widgets/stat-widget";
 import { DashboardHero, heroVariantForRole } from "@/components/layout/dashboard-hero";
 import { getServiceStats, getTeamServiceStats } from "@/lib/stats/dashboard-stats";
+import { getMissedWeeklyShares, getNonConnectedClients } from "@/lib/stats/client-flags";
+import { Send, UserX } from "lucide-react";
 import { getMyTarget, getTeamSalesTargetsForMonth } from "@/actions/sales-targets/sales-target.actions";
 import { getTeamMemberIds } from "@/lib/hierarchy/team";
 import { getServiceQualityRollup } from "@/lib/stats/sme-rollup";
@@ -41,6 +43,10 @@ export default async function ServiceDashboardPage() {
   await ensureFollowUpNotifications();
   const stats = await getServiceStats(session!.user.id);
   const welcomeCalls = await getServiceWelcomeCallSummary(session!.user.id, session!.user.role);
+  const [myMissedShares, myNonConnected] = await Promise.all([
+    getMissedWeeklyShares({ assignedToId: session!.user.id }),
+    getNonConnectedClients({ assignedToId: session!.user.id }),
+  ]);
 
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
@@ -121,6 +127,39 @@ export default async function ServiceDashboardPage() {
             { label: "On Hold", value: stats.onHoldProfiles },
             { label: "Expired", value: stats.expiredServiceCount },
           ]}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <StatWidget
+          title="Missed Weekly Shares"
+          icon={Send}
+          accentColor="amber"
+          badge={{
+            text: myMissedShares.count > 0 ? "Needs Attention" : "All Good",
+            className:
+              myMissedShares.count > 0
+                ? "bg-red-100 text-red-700 border-red-200"
+                : "bg-emerald-100 text-emerald-700 border-emerald-200",
+          }}
+          lines={[{ label: "No share in 7+ days", value: myMissedShares.count }]}
+          actionLabel="View Clients"
+          actionHref={"/dashboard/admin/missed-weekly-shares?assignedTo=" + session!.user.id}
+        />
+        <StatWidget
+          title="Non-Connected Clients"
+          icon={UserX}
+          accentColor="rose"
+          badge={{
+            text: myNonConnected.count > 0 ? "Needs Attention" : "All Good",
+            className:
+              myNonConnected.count > 0
+                ? "bg-red-100 text-red-700 border-red-200"
+                : "bg-emerald-100 text-emerald-700 border-emerald-200",
+          }}
+          lines={[{ label: "No update in 2+ days", value: myNonConnected.count }]}
+          actionLabel="View Clients"
+          actionHref={"/dashboard/admin/non-connected-clients?assignedTo=" + session!.user.id}
         />
       </div>
 
