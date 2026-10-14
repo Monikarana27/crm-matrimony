@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { getPaymentHistoryAction } from "@/actions/subscriptions/payment-history.actions";
+import { getRefundHistoryAction } from "@/actions/subscriptions/refund.actions";
 import type { PaymentHistoryEntry } from "@/lib/stats/payment-history";
+
+type RefundHistoryEntry = Awaited<ReturnType<typeof getRefundHistoryAction>>[number];
 
 const STATUS_STYLES: Record<string, string> = {
   PAID: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -35,6 +38,7 @@ export function SubscriptionPaymentHistoryDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const [entries, setEntries] = useState<PaymentHistoryEntry[]>([]);
+  const [refunds, setRefunds] = useState<RefundHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +46,9 @@ export function SubscriptionPaymentHistoryDialog({
     if (!open) return;
     setError(null);
     setLoading(true);
+    getRefundHistoryAction(profileId)
+      .then((data) => setRefunds(data))
+      .catch(() => setRefunds([]));
     getPaymentHistoryAction(profileId)
       .then((data) => setEntries(data))
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load payment history."))
@@ -104,6 +111,39 @@ export function SubscriptionPaymentHistoryDialog({
             </table>
           )}
         </div>
+
+        {refunds.length > 0 && (
+          <div className="mt-4 space-y-2 border-t pt-4">
+            <h3 className="text-sm font-semibold">Refund History</h3>
+            {refunds.map((r) => (
+              <div key={r.id} className="rounded-md border p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">{r.planName}</span>
+                  <Badge
+                    variant="outline"
+                    className={
+                      r.status === "PROCESSED"
+                        ? "border-emerald-200 bg-emerald-100 text-emerald-700"
+                        : "border-amber-200 bg-amber-100 text-amber-700"
+                    }
+                  >
+                    {r.status === "PROCESSED" ? "Completed" : "Pending"}
+                  </Badge>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap">{r.reason}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {"Marked by " + r.requestedByName + " on " + new Date(r.requestedAt).toLocaleDateString("en-IN")}
+                  {r.status === "PROCESSED" &&
+                    " · Completed" +
+                      (r.processedByName ? " by " + r.processedByName : "") +
+                      (r.processedAt ? " on " + new Date(r.processedAt).toLocaleDateString("en-IN") : "") +
+                      (r.amount != null ? " · " + formatMoney(r.amount, "INR") + " refunded" : "")}
+                </p>
+                {r.processNote && <p className="mt-1 text-xs text-muted-foreground">{r.processNote}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

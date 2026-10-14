@@ -526,6 +526,7 @@ enum SubscriptionStatus {
   EXPIRED
   STOPPED
   PENDING
+  REFUNDED
 }
 
 model Plan {
@@ -580,6 +581,7 @@ model Subscription {
   stageHistory   ServiceStageHistory[]
   comments       SubscriptionComment[]
   smeReviews     SmeClientReview[]
+  refunds        Refund[]
 
   @@index([status])
   @@index([profileId])
@@ -1612,4 +1614,32 @@ model SmeClientCallAttempt {
 
   @@index([subscriptionId, createdAt])
   @@map("sme_client_call_attempts")
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSED
+}
+
+/// A client marked for refund because the service was not good. Marking sets the
+/// subscription to REFUNDED (drops it out of Ongoing Services); admin later confirms PROCESSED.
+model Refund {
+  id String @id @default(cuid())
+
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  reason String       @db.Text
+  status RefundStatus @default(PENDING)
+  amount Float?
+
+  requestedById String?
+  requestedAt   DateTime @default(now())
+  processedById String?
+  processedAt   DateTime?
+  processNote   String?  @db.Text
+
+  @@index([status])
+  @@index([subscriptionId])
+  @@map("refunds")
 }

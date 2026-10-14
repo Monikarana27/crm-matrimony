@@ -34,6 +34,7 @@ const STATUS_STYLES: Record<string, string> = {
   ACTIVE: "bg-emerald-100 text-emerald-700 border-emerald-200",
   HOLD: "bg-orange-100 text-orange-700 border-orange-200",
   EXPIRED: "bg-red-100 text-red-700 border-red-200",
+  REFUNDED: "bg-orange-100 text-orange-700 border-orange-200",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -42,6 +43,7 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: "Expired",
   PENDING: "Pending (legacy)",
   STOPPED: "Stopped (legacy)",
+  REFUNDED: "Refunded",
 };
 
 function StatusSelect({ subscription, isAdmin }: { subscription: SubscriptionRow; isAdmin: boolean }) {
@@ -82,6 +84,7 @@ function StatusSelect({ subscription, isAdmin }: { subscription: SubscriptionRow
           <SelectItem value="EXPIRED">Expired</SelectItem>
           {(value === "PENDING") && <SelectItem value="PENDING" disabled>Pending (legacy)</SelectItem>}
           {(value === "STOPPED") && <SelectItem value="STOPPED" disabled>Stopped (legacy)</SelectItem>}
+          {(value === "REFUNDED") && <SelectItem value="REFUNDED" disabled>Refunded</SelectItem>}
         </SelectContent>
       </Select>
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}

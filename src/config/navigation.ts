@@ -1,4 +1,5 @@
 // src/config/navigation.ts
+import { Undo2 } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -55,6 +56,7 @@ export const NAV_CONFIG: Record<Role, NavItem[]> = {
     { label: "Service Overview", href: "/dashboard/admin/service-overview", icon: HeartHandshake, section: "Service" },
     { label: "Newly Paid Clients", href: "/dashboard/admin/newly-paid-clients", icon: UserCheck, section: "Service" },
     { label: "Ongoing Services", href: "/dashboard/admin/ongoing-services", icon: History, section: "Service" },
+    { label: "Refund Clients", href: "/dashboard/admin/refunds", icon: Undo2, section: "Service" },
     { label: "Expired Clients", href: "/dashboard/admin/expired-clients", icon: XCircle, section: "Service" },
     { label: "Expiring Soon", href: "/dashboard/admin/subscriptions/expiring", icon: CalendarClock, section: "Service" },
     { label: "Team Activity", href: "/dashboard/admin/team-activity", icon: TrendingUp, section: "HR" },
@@ -86,6 +88,7 @@ export const NAV_CONFIG: Record<Role, NavItem[]> = {
     { label: "Call History", href: "/dashboard/admin/welcome-calls", icon: PhoneCall, section: "Service" },
     { label: "Newly Paid Clients", href: "/dashboard/admin/newly-paid-clients", icon: UserCheck, section: "Service" },
     { label: "Ongoing Services", href: "/dashboard/admin/ongoing-services", icon: History, section: "Service" },
+    { label: "Refund Clients", href: "/dashboard/admin/refunds", icon: Undo2, section: "Service" },
     { label: "Expired Clients", href: "/dashboard/admin/expired-clients", icon: XCircle, section: "Service" },
     { label: "Expiring Soon", href: "/dashboard/admin/subscriptions/expiring", icon: CalendarClock, section: "Service" },
     { label: "Settings", href: "/dashboard/admin/settings", icon: Settings, section: "Admin Tools" },

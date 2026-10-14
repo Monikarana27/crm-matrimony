@@ -8,13 +8,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, MessageSquareText, History, PauseCircle, PlayCircle, RefreshCw, Receipt, Pencil } from "lucide-react";
+import { MoreHorizontal, MessageSquareText, History, PauseCircle, PlayCircle, RefreshCw, Receipt, Pencil, Undo2 } from "lucide-react";
 import { SubscriptionAddCommentDialog } from "@/components/subscriptions/subscription-add-comment-dialog";
 import { SubscriptionCommentHistoryDialog } from "@/components/subscriptions/subscription-comment-history-dialog";
 import { SubscriptionPauseDialog } from "@/components/subscriptions/subscription-pause-dialog";
 import { SubscriptionRenewDialog } from "@/components/subscriptions/subscription-renew-dialog";
 import { SubscriptionEditDialog } from "@/components/subscriptions/subscription-edit-dialog";
 import { SubscriptionPaymentHistoryDialog } from "@/components/subscriptions/subscription-payment-history-dialog";
+import { SubscriptionRefundDialog } from "@/components/subscriptions/subscription-refund-dialog";
 import { DeleteRowButton } from "@/components/shared/delete-row-button";
 import { deleteSubscriptionAction, resumeSubscriptionAction } from "@/actions/subscriptions/subscription.actions";
 
@@ -22,6 +23,7 @@ type SubscriptionForActions = {
   id: string;
   followUpDate: Date | null;
   isPaused: boolean;
+  status?: string;
   pauseDays: number | null;
   startDate: Date;
   endDate: Date | null;
@@ -36,6 +38,7 @@ export function SubscriptionRowActions({ subscription, isAdmin = false }: { subs
   const [renewOpen, setRenewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
   const [isResuming, setIsResuming] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
@@ -96,6 +99,12 @@ export function SubscriptionRowActions({ subscription, isAdmin = false }: { subs
               {isResuming ? "Resuming..." : `Resume Service (+${subscription.pauseDays} days)`}
             </DropdownMenuItem>
           )}
+          {isAdmin && (!subscription.status || subscription.status === "ACTIVE" || subscription.status === "HOLD") && (
+            <DropdownMenuItem onSelect={() => setRefundOpen(true)} className="text-red-700 focus:text-red-700">
+              <Undo2 className="mr-2 h-3.5 w-3.5" />
+              Process Refund
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       {resumeError && <p className="text-xs text-destructive">{resumeError}</p>}
@@ -130,6 +139,12 @@ export function SubscriptionRowActions({ subscription, isAdmin = false }: { subs
         profileName={subscription.profile.name}
         open={paymentHistoryOpen}
         onOpenChange={setPaymentHistoryOpen}
+      />
+      <SubscriptionRefundDialog
+        subscriptionId={subscription.id}
+        profileName={subscription.profile.name}
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
       />
       {isAdmin && (
         <SubscriptionEditDialog

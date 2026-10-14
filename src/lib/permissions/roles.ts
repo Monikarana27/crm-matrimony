@@ -18,6 +18,7 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/dashboard/admin/staff-history": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/admin/newly-paid-clients": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/admin/ongoing-services": ["SUPER_ADMIN", "ADMIN"],
+  "/dashboard/admin/refunds": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/admin/expired-clients": ["SUPER_ADMIN", "ADMIN", "SERVICE", "SERVICE_TL", "SERVICE_MANAGER"],
   "/dashboard/admin": ["SUPER_ADMIN", "ADMIN"],
   "/dashboard/sales": ["SUPER_ADMIN", "ADMIN", "SALES", "SALES_TL", "SALES_MANAGER", "SERVICE_MANAGER"],
