@@ -62,7 +62,33 @@ export async function createMeetingAction(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    const issue = parsed.error.issues[0];
+    const field = issue.path.join(".");
+    return { error: field ? `${field}: ${issue.message}` : issue.message };
+  }
+
+  // Employees may only schedule for their own clients, with prospects already
+  // shared to that client. Admins/Super Admins are unrestricted.
+  if (!["SUPER_ADMIN", "ADMIN"].includes(session.user.role)) {
+    const ownClient = await prisma.profile.findFirst({
+      where: { id: parsed.data.profileId, deletedAt: null, assignedToId: session.user.id },
+      select: { id: true },
+    });
+    if (!ownClient) {
+      return { error: "You can only schedule meetings for your own clients." };
+    }
+    if (parsed.data.profileTwoId) {
+      const shared = await prisma.profileShare.findFirst({
+        where: {
+          sharedProfileId: parsed.data.profileTwoId,
+          subscription: { profileId: parsed.data.profileId },
+        },
+        select: { id: true },
+      });
+      if (!shared) {
+        return { error: "That prospect hasn't been shared with this client yet." };
+      }
+    }
   }
 
   const scheduledAt = new Date(parsed.data.scheduledAt);
@@ -118,6 +144,110 @@ export async function createMeetingAction(
 
   revalidatePath("/dashboard/admin/meetings");
   redirect("/dashboard/admin/meetings");
+}
+
+function istStartOfToday(): Date {
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const dayMs = 24 * 60 * 60 * 1000;
+  return new Date(Math.floor((Date.now() + IST_OFFSET_MS) / dayMs) * dayMs - IST_OFFSET_MS);
+}
+
+/**
+ * Client dropdown: clients with an ongoing service (same rules as the Ongoing Services
+ * page: ACTIVE, not paused, not expired, welcome call not pending). Admins see all of
+ * them; everyone else only the ones assigned to them. Empty query lists them all.
+ */
+export async function searchMeetingClients(query: string) {
+  const session = await requireStaff();
+  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(session.user.role);
+  const q = query.trim();
+
+  const pending = await prisma.welcomeCall.findMany({
+    where: { profileId: { not: null }, status: "PENDING" },
+    select: { profileId: true },
+  });
+  const excludeIds = pending.map((w) => w.profileId).filter((id): id is string => !!id);
+
+  const profiles = await prisma.profile.findMany({
+    where: {
+      deletedAt: null,
+      ...(isAdmin ? {} : { assignedToId: session.user.id }),
+      ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}),
+      subscriptions: {
+        some: {
+          status: "ACTIVE",
+          isPaused: false,
+          OR: [{ endDate: null }, { endDate: { gte: istStartOfToday() } }],
+        },
+      },
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { profileCode: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, profileCode: true },
+    take: 50,
+  });
+  return profiles.map((p) => ({ id: p.id, label: `${p.name} (${p.profileCode})` }));
+}
+
+/**
+ * Prospect dropdown: profiles already shared with this client. Admins can additionally
+ * type to search any profile. Employees only ever see their own client's shares.
+ */
+export async function searchMeetingProspects(clientId: string, query: string) {
+  const session = await requireStaff();
+  if (!clientId) return [];
+  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(session.user.role);
+  const q = query.trim();
+  const nameFilter = q
+    ? {
+        OR: [
+          { name: { contains: q, mode: "insensitive" as const } },
+          { profileCode: { contains: q, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  if (isAdmin && q) {
+    const profiles = await prisma.profile.findMany({
+      where: { deletedAt: null, id: { not: clientId }, ...nameFilter },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, profileCode: true },
+      take: 20,
+    });
+    return profiles.map((p) => ({ id: p.id, label: `${p.name} (${p.profileCode})` }));
+  }
+
+  if (!isAdmin) {
+    const ownClient = await prisma.profile.findFirst({
+      where: { id: clientId, deletedAt: null, assignedToId: session.user.id },
+      select: { id: true },
+    });
+    if (!ownClient) return [];
+  }
+
+  const shares = await prisma.profileShare.findMany({
+    where: {
+      subscription: { profileId: clientId },
+      sharedProfile: { deletedAt: null, ...nameFilter },
+    },
+    orderBy: { sharedAt: "desc" },
+    select: { sharedProfile: { select: { id: true, name: true, profileCode: true } } },
+    take: 200,
+  });
+
+  const unique = new Map<string, { id: string; label: string }>();
+  for (const s of shares) {
+    const p = s.sharedProfile;
+    if (!unique.has(p.id)) unique.set(p.id, { id: p.id, label: `${p.name} (${p.profileCode})` });
+  }
+  return Array.from(unique.values()).slice(0, 50);
 }
 
 export async function updateMeetingStatusAction(

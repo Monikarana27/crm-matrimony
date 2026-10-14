@@ -702,6 +702,8 @@ model Payment {
 enum MeetingType {
   FACE_TO_FACE
   TELE
+  VC
+  SUCCESS_STORY
 }
 
 enum MeetingStatus {
@@ -1586,4 +1588,28 @@ model StaleReassignmentItem {
   @@index([runId])
   @@index([leadId])
   @@map("stale_reassignment_items")
+}
+
+enum SmeCallStatus {
+  NOT_PICKED
+  BUSY
+  SWITCHED_OFF
+  CALL_BACK_LATER
+  WRONG_NUMBER
+}
+
+/// A call by an SME to an ongoing-service client that did NOT produce a review
+/// (didn't pick, busy, etc.). Answered calls stay in SmeClientReview. IDs are
+/// plain strings (no FKs) so this table doesn't touch Subscription/User.
+model SmeClientCallAttempt {
+  id             String        @id @default(cuid())
+  subscriptionId String
+  employeeId     String
+  callerId       String
+  status         SmeCallStatus
+  note           String?       @db.Text
+  createdAt      DateTime      @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@map("sme_client_call_attempts")
 }

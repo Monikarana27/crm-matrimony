@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth/auth";
 
 export type ClientCall = { id: string; rating: number; feedback: string; createdAt: Date };
 
+export type ClientAttempt = { id: string; status: string; note: string | null; createdAt: Date };
+
 export type ClientCallRow = {
   subscriptionId: string;
   employeeId: string;
@@ -16,6 +18,8 @@ export type ClientCallRow = {
   status: string;
   /** Calls by the current assignee only, newest first (max 10). */
   calls: ClientCall[];
+  /** Calls that did not reach the client (didn't pick etc.), newest first (max 10). */
+  attempts: ClientAttempt[];
 };
 
 export type EmployeeRating = {
@@ -71,9 +75,21 @@ async function fetchOngoing(assignedToId?: string): Promise<ClientCallRow[]> {
     },
   });
 
+  const attemptRows = subs.length
+    ? await prisma.smeClientCallAttempt.findMany({
+        where: { subscriptionId: { in: subs.map((s) => s.id) } },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, subscriptionId: true, employeeId: true, status: true, note: true, createdAt: true },
+      })
+    : [];
+
   return subs.flatMap((s) => {
     const employeeId = s.profile.assignedToId;
     if (!employeeId) return [];
+    const attempts = attemptRows
+      .filter((a) => a.subscriptionId === s.id && a.employeeId === employeeId)
+      .slice(0, 10)
+      .map((a) => ({ id: a.id, status: a.status as string, note: a.note, createdAt: a.createdAt }));
     const calls = s.smeReviews
       .filter((r) => r.employeeId === employeeId)
       .slice(0, 10)
@@ -91,6 +107,7 @@ async function fetchOngoing(assignedToId?: string): Promise<ClientCallRow[]> {
         planName: s.plan.name ?? "",
         status: s.status,
         calls,
+        attempts,
       },
     ];
   });

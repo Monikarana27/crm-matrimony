@@ -19,9 +19,9 @@ import {
   type AsyncComboboxOption,
 } from "@/components/shared/async-searchable-combobox";
 import {
-  searchAttachableRecords,
-  searchEmployeesForMention,
-} from "@/actions/workspace/workspace.actions";
+  searchMeetingClients,
+  searchMeetingProspects,
+} from "@/actions/meetings/meeting.actions";
 
 interface ScheduleMeetingFormProps {
   action: (prevState: unknown, formData: FormData) => Promise<{ error: string | null }>;
@@ -34,22 +34,13 @@ export function ScheduleMeetingForm({ action }: ScheduleMeetingFormProps) {
   const [profileTwoId, setProfileTwoId] = useState("");
   const [profileTwoLabel, setProfileTwoLabel] = useState("");
   const [type, setType] = useState("TELE");
-  const [assignedToId, setAssignedToId] = useState("");
-  const [assignedToLabel, setAssignedToLabel] = useState("");
 
-  async function searchProfiles(query: string): Promise<AsyncComboboxOption[]> {
-    const results = await searchAttachableRecords("PROFILE", query);
-    return results;
+  async function searchClients(query: string): Promise<AsyncComboboxOption[]> {
+    return searchMeetingClients(query);
   }
 
-  async function searchProfilesExcludingOne(query: string): Promise<AsyncComboboxOption[]> {
-    const results = await searchAttachableRecords("PROFILE", query);
-    return results.filter((r) => r.id !== profileId);
-  }
-
-  async function searchEmployees(query: string): Promise<AsyncComboboxOption[]> {
-    const results = await searchEmployeesForMention(query);
-    return results.map((e) => ({ id: e.id, label: e.name }));
+  async function searchProspects(query: string): Promise<AsyncComboboxOption[]> {
+    return searchMeetingProspects(profileId, query);
   }
 
   return (
@@ -58,34 +49,45 @@ export function ScheduleMeetingForm({ action }: ScheduleMeetingFormProps) {
         <form action={formAction} className="space-y-5">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Profile One</Label>
+              <Label>Client</Label>
               <AsyncSearchableCombobox
                 value={profileId}
                 onValueChange={(id, label) => {
                   setProfileId(id);
                   setProfileLabel(label ?? "");
+                  setProfileTwoId("");
+                  setProfileTwoLabel("");
                 }}
                 initialLabel={profileLabel}
-                search={searchProfiles}
-                placeholder="Select a profile"
-                searchPlaceholder="Search by name or code..."
+                search={searchClients}
+                loadOnOpen
+                placeholder="Select a client"
+                searchPlaceholder="Search your clients by name or code..."
               />
               <input type="hidden" name="profileId" value={profileId} />
             </div>
 
             <div className="space-y-2">
-              <Label>Profile Two (match)</Label>
-              <AsyncSearchableCombobox
-                value={profileTwoId}
-                onValueChange={(id, label) => {
-                  setProfileTwoId(id);
-                  setProfileTwoLabel(label ?? "");
-                }}
-                initialLabel={profileTwoLabel}
-                search={searchProfilesExcludingOne}
-                placeholder="Select the matching profile"
-                searchPlaceholder="Search by name or code..."
-              />
+              <Label>Prospect</Label>
+              {profileId ? (
+                <AsyncSearchableCombobox
+                  key={profileId}
+                  value={profileTwoId}
+                  onValueChange={(id, label) => {
+                    setProfileTwoId(id);
+                    setProfileTwoLabel(label ?? "");
+                  }}
+                  initialLabel={profileTwoLabel}
+                  search={searchProspects}
+                  loadOnOpen
+                  placeholder="Select a prospect"
+                  searchPlaceholder="Search prospects sent to this client..."
+                />
+              ) : (
+                <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+                  Select a client first
+                </div>
+              )}
               <input type="hidden" name="profileTwoId" value={profileTwoId} />
             </div>
 
@@ -98,6 +100,8 @@ export function ScheduleMeetingForm({ action }: ScheduleMeetingFormProps) {
                 <SelectContent>
                   <SelectItem value="TELE">Tele Meeting</SelectItem>
                   <SelectItem value="FACE_TO_FACE">Face to Face</SelectItem>
+                  <SelectItem value="VC">VC</SelectItem>
+                  <SelectItem value="SUCCESS_STORY">Success Story</SelectItem>
                 </SelectContent>
               </Select>
               <input type="hidden" name="type" value={type} />
@@ -108,21 +112,6 @@ export function ScheduleMeetingForm({ action }: ScheduleMeetingFormProps) {
               <Input id="scheduledAt" name="scheduledAt" type="datetime-local" required />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label>Assign To (optional)</Label>
-              <AsyncSearchableCombobox
-                value={assignedToId}
-                onValueChange={(id, label) => {
-                  setAssignedToId(id);
-                  setAssignedToLabel(label ?? "");
-                }}
-                initialLabel={assignedToLabel}
-                search={searchEmployees}
-                placeholder="Select an employee"
-                searchPlaceholder="Search employees..."
-              />
-              <input type="hidden" name="assignedToId" value={assignedToId} />
-            </div>
           </div>
 
           <div className="space-y-2">

@@ -31,6 +31,7 @@ export function AsyncSearchableCombobox({
   disabled = false,
   minChars = 2,
   debounceMs = 300,
+  loadOnOpen = false,
 }: {
   id?: string;
   value: string;
@@ -42,6 +43,7 @@ export function AsyncSearchableCombobox({
   disabled?: boolean;
   minChars?: number;
   debounceMs?: number;
+  loadOnOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -54,24 +56,28 @@ export function AsyncSearchableCombobox({
     setSelectedLabel(initialLabel ?? "");
   }, [initialLabel]);
 
+  // With loadOnOpen, the list loads as soon as the dropdown opens (no typing needed).
+  const effectiveMin = loadOnOpen ? 0 : minChars;
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (query.trim().length < minChars) {
+    if (!open || query.trim().length < effectiveMin) {
       setResults([]);
       setLoading(false);
       return;
     }
     setLoading(true);
+    const delay = query.trim() === "" ? 0 : debounceMs;
     debounceRef.current = setTimeout(() => {
       search(query.trim())
         .then((res) => setResults(res))
         .finally(() => setLoading(false));
-    }, debounceMs);
+    }, delay);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, open]);
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -132,10 +138,10 @@ export function AsyncSearchableCombobox({
                 Searching...
               </div>
             )}
-            {!loading && query.trim().length < minChars && (
-              <CommandEmpty>Type at least {minChars} characters to search.</CommandEmpty>
+            {!loading && query.trim().length < effectiveMin && (
+              <CommandEmpty>Type at least {effectiveMin} characters to search.</CommandEmpty>
             )}
-            {!loading && query.trim().length >= minChars && results.length === 0 && (
+            {!loading && query.trim().length >= effectiveMin && results.length === 0 && (
               <CommandEmpty>No results found.</CommandEmpty>
             )}
             {!loading && results.length > 0 && (

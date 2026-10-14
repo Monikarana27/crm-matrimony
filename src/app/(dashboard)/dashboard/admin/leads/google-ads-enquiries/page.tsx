@@ -1,0 +1,42 @@
+import { getLeads } from "@/actions/leads/lead.actions";
+import { prisma } from "@/lib/db/prisma";
+import { auth } from "@/lib/auth/auth";
+import { redirect } from "next/navigation";
+import { DashboardHero } from "@/components/layout/dashboard-hero";
+import { LeadsTable } from "../leads-table";
+
+export default async function GoogleAdsEnquiriesPage() {
+  const session = await auth();
+  const role = session!.user.role;
+  const canAssign = role === "ADMIN" || role === "SUPER_ADMIN";
+
+  if (!canAssign) {
+    redirect("/dashboard");
+  }
+
+  const leads = await getLeads({ sourceStartsWith: "Google Ads", unassignedOnly: true });
+
+  const employees = await prisma.user.findMany({
+    where: {
+      active: true,
+      OR: [
+        { role: { in: ["SALES", "SALES_TL", "SALES_MANAGER"] } },
+        { id: "cmtikr0sw0007l39ioxk0lgns" }, // Devender Kumar (SERVICE_MANAGER), cross-access to Sales
+        { id: "cmtikr0t3000dl39i1d69v61y" /* Shahina Sheikh (SERVICE_MANAGER), added as lead assignee on request */ }, { id: "cmtjpw3lj000cl3t0rypla7tl" }, { id: "cmuzb8gcm00bsl3zwjwuhwvz9" }, // Rahul (SERVICE), can be assigned leads
+            // Noor Jahan (SERVICE), added as lead assignee on request
+      ],
+    },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
+  return (
+    <div className="space-y-6">
+      <DashboardHero
+        title="Google Ads Enquiries"
+        subtitle="Leads from Google Ads lead forms. Review and assign to sales."
+      />
+      <LeadsTable leads={leads} employees={employees} canAssign={canAssign} />
+    </div>
+  );
+}

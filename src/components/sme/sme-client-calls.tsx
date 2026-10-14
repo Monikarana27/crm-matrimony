@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ClientCallRow, EmployeeRating } from "@/lib/stats/sme-client-reviews";
-import { logSmeClientCallAction } from "@/actions/sme/sme-client-review.actions";
+import {
+  logSmeClientCallAction,
+  logSmeClientAttemptAction,
+  scheduleSmeClientFollowUpAction,
+} from "@/actions/sme/sme-client-review.actions";
 
 const stars = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
 const tone = (avg: number | null) =>
@@ -14,6 +18,18 @@ const fmt = (d: Date | string) =>
 
 const fieldClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+const CALL_STATUSES = [
+  { value: "ANSWERED", label: "Answered" },
+  { value: "NOT_PICKED", label: "Didn't pick" },
+  { value: "BUSY", label: "Busy" },
+  { value: "SWITCHED_OFF", label: "Switched off" },
+  { value: "CALL_BACK_LATER", label: "Call back later" },
+  { value: "WRONG_NUMBER", label: "Wrong number" },
+];
+const ATTEMPT_LABEL: Record<string, string> = Object.fromEntries(
+  CALL_STATUSES.map((s) => [s.value, s.label])
+);
 
 export function SmeClientCalls({
   rows,
@@ -30,6 +46,10 @@ export function SmeClientCalls({
   const [openHistory, setOpenHistory] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [callStatus, setCallStatus] = useState("ANSWERED");
+  const [attemptNote, setAttemptNote] = useState("");
+  const [followUpNote, setFollowUpNote] = useState("");
+  const [followUpDate, setFollowUpDate] = useState("");
 
   const ratingMap = useMemo(() => new Map(ratings.map((r) => [r.employeeId, r])), [ratings]);
 
@@ -66,16 +86,33 @@ export function SmeClientCalls({
     setOpenLog(id);
     setRating(0);
     setFeedback("");
+    setCallStatus("ANSWERED");
+    setAttemptNote("");
+    setFollowUpNote("");
+    setFollowUpDate("");
     setError(null);
   }
 
   function save(subscriptionId: string) {
     setError(null);
-    if (!rating) return setError("Pick a rating");
-    if (!feedback.trim()) return setError("Write what the client said");
+    if (callStatus === "ANSWERED") {
+      if (!rating) return setError("Pick a rating");
+      if (!feedback.trim()) return setError("Write what the client said");
+    }
     startTransition(async () => {
       try {
-        await logSmeClientCallAction({ subscriptionId, rating, feedback });
+        if (callStatus === "ANSWERED") {
+          await logSmeClientCallAction({ subscriptionId, rating, feedback });
+        } else {
+          await logSmeClientAttemptAction({ subscriptionId, status: callStatus, note: attemptNote });
+        }
+        if (followUpDate || followUpNote.trim()) {
+          await scheduleSmeClientFollowUpAction({
+            subscriptionId,
+            note: followUpNote,
+            followUpDate: followUpDate || null,
+          });
+        }
         setOpenLog(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
@@ -180,35 +217,86 @@ export function SmeClientCalls({
 
                 {last && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{last.feedback}</p>}
 
+                {c.attempts[0] && (!last || new Date(c.attempts[0].createdAt) > new Date(last.createdAt)) && (
+                  <p className="text-xs text-amber-700">
+                    Tried {fmt(c.attempts[0].createdAt)} · {ATTEMPT_LABEL[c.attempts[0].status] ?? c.attempts[0].status}
+                    {c.attempts[0].note ? ` — ${c.attempts[0].note}` : ""}
+                  </p>
+                )}
+
                 {openLog === c.subscriptionId ? (
                   <div className="space-y-2 rounded-md bg-muted/50 p-3">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((n) => (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {CALL_STATUSES.map((s) => (
                         <button
-                          key={n}
+                          key={s.value}
                           type="button"
-                          onClick={() => setRating(n)}
+                          onClick={() => setCallStatus(s.value)}
                           className={cn(
-                            "h-9 w-9 rounded-md border text-sm",
-                            rating >= n ? "border-amber-400 bg-amber-100 text-amber-700" : "border-border"
+                            "rounded-full border px-3 py-1 text-xs",
+                            callStatus === s.value ? "border-primary bg-primary/10 text-primary" : "border-border"
                           )}
-                          aria-label={`${n} star${n > 1 ? "s" : ""}`}
                         >
-                          {n}
+                          {s.label}
                         </button>
                       ))}
-                      <span className="ml-2 text-xs text-muted-foreground">Rating for the employee</span>
                     </div>
-                    <textarea
-                      className={cn(fieldClass, "min-h-[80px]")}
-                      placeholder="What did the client say about the service they're getting?"
-                      value={feedback}
-                      onChange={(e) => setFeedback(e.target.value)}
-                    />
+                    {callStatus === "ANSWERED" ? (
+                      <>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setRating(n)}
+                              className={cn(
+                                "h-9 w-9 rounded-md border text-sm",
+                                rating >= n ? "border-amber-400 bg-amber-100 text-amber-700" : "border-border"
+                              )}
+                              aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                            >
+                              {n}
+                            </button>
+                          ))}
+                          <span className="ml-2 text-xs text-muted-foreground">Rating for the employee</span>
+                        </div>
+                        <textarea
+                          className={cn(fieldClass, "min-h-[80px]")}
+                          placeholder="What did the client say about the service they're getting?"
+                          value={feedback}
+                          onChange={(e) => setFeedback(e.target.value)}
+                        />
+                      </>
+                    ) : (
+                      <textarea
+                        className={cn(fieldClass, "min-h-[60px]")}
+                        placeholder="Optional note (e.g. phone rang out, try again in the evening)"
+                        value={attemptNote}
+                        onChange={(e) => setAttemptNote(e.target.value)}
+                      />
+                    )}
+                    <div className="space-y-1 rounded-md border border-dashed border-border p-2">
+                      <p className="text-xs font-semibold text-muted-foreground">FOLLOW-UP (optional)</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="datetime-local"
+                          className={cn(fieldClass, "w-auto")}
+                          value={followUpDate}
+                          onChange={(e) => setFollowUpDate(e.target.value)}
+                        />
+                        <input
+                          type="text"
+                          className={cn(fieldClass, "min-w-[160px] flex-1")}
+                          placeholder="Follow-up note (defaults to: Call back)"
+                          value={followUpNote}
+                          onChange={(e) => setFollowUpNote(e.target.value)}
+                        />
+                      </div>
+                    </div>
                     {error && <p className="text-sm text-red-600">{error}</p>}
                     <div className="flex gap-2">
                       <Button size="sm" disabled={isPending} onClick={() => save(c.subscriptionId)}>
-                        {isPending ? "Saving..." : "Save call"}
+                        {isPending ? "Saving..." : callStatus === "ANSWERED" ? "Save call" : "Save attempt"}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setOpenLog(null)}>
                         Cancel
@@ -220,7 +308,7 @@ export function SmeClientCalls({
                     <Button size="sm" variant="outline" onClick={() => startLog(c.subscriptionId)}>
                       {last ? "Call again" : "Log call"}
                     </Button>
-                    {c.calls.length > 1 && (
+                    {c.calls.length + c.attempts.length > 1 && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -228,7 +316,7 @@ export function SmeClientCalls({
                           setOpenHistory(openHistory === c.subscriptionId ? null : c.subscriptionId)
                         }
                       >
-                        History ({c.calls.length})
+                        History ({c.calls.length + c.attempts.length})
                       </Button>
                     )}
                   </div>
@@ -236,13 +324,28 @@ export function SmeClientCalls({
 
                 {openHistory === c.subscriptionId && (
                   <div className="space-y-2 border-l-2 pl-3">
-                    {c.calls.slice(1).map((h) => (
-                      <div key={h.id} className="text-sm">
-                        <span className={tone(h.rating)}>{stars(h.rating)}</span>{" "}
-                        <span className="text-xs text-muted-foreground">{fmt(h.createdAt)}</span>
-                        <p className="whitespace-pre-wrap text-muted-foreground">{h.feedback}</p>
-                      </div>
-                    ))}
+                    {[
+                      ...c.calls.map((h) => ({ kind: "call" as const, id: h.id, at: h.createdAt, h })),
+                      ...c.attempts.map((a) => ({ kind: "attempt" as const, id: a.id, at: a.createdAt, a })),
+                    ]
+                      .sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime())
+                      .map((item) =>
+                        item.kind === "call" ? (
+                          <div key={item.id} className="text-sm">
+                            <span className={tone(item.h.rating)}>{stars(item.h.rating)}</span>{" "}
+                            <span className="text-xs text-muted-foreground">{fmt(item.at)} · answered</span>
+                            <p className="whitespace-pre-wrap text-muted-foreground">{item.h.feedback}</p>
+                          </div>
+                        ) : (
+                          <div key={item.id} className="text-sm">
+                            <span className="text-amber-700">{ATTEMPT_LABEL[item.a.status] ?? item.a.status}</span>{" "}
+                            <span className="text-xs text-muted-foreground">{fmt(item.at)}</span>
+                            {item.a.note && (
+                              <p className="whitespace-pre-wrap text-muted-foreground">{item.a.note}</p>
+                            )}
+                          </div>
+                        )
+                      )}
                   </div>
                 )}
               </div>

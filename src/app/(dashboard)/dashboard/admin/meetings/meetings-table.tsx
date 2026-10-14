@@ -58,6 +58,8 @@ const OUTCOME_STYLES: Record<string, string> = {
 
 const TYPE_LABELS: Record<string, string> = {
   FACE_TO_FACE: "Face to Face",
+  VC: "VC",
+  SUCCESS_STORY: "Success Story",
   TELE: "Tele Meeting",
 };
 

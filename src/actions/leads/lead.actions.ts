@@ -197,6 +197,14 @@ export async function getMetaEnquiryCount(): Promise<number> {
   return prisma.lead.count({ where: enquiryBadgeWhere("Meta") });
 }
 
+/** Count for the Google Ads Enquiries badge: unassigned, or assigned within the grace window. */
+export async function getGoogleAdsEnquiryCount(): Promise<number> {
+  const session = await requireStaff();
+  if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
+
+  return prisma.lead.count({ where: enquiryBadgeWhere("Google Ads") });
+}
+
 export async function getUnseenWebsiteLeadsCount(): Promise<number> {
   const session = await requireStaff();
   if (!["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) return 0;
@@ -458,7 +466,7 @@ export async function updateLeadAction(
   // Website/Meta leads keep their original source forever, to protect lead-analytics
   // attribution — the same reasoning deleteLeadAction already applies to these leads.
   const existing = await prisma.lead.findUnique({ where: { id }, select: { source: true } });
-  const isLockedSource = existing?.source?.startsWith("Website") || existing?.source?.startsWith("Meta");
+  const isLockedSource = existing?.source?.startsWith("Website") || existing?.source?.startsWith("Meta") || existing?.source?.startsWith("Google Ads");
   if (isLockedSource && (parsed.data.source || null) !== existing!.source) {
     return { error: `Source can't be changed for a ${existing!.source} lead, to protect lead-analytics attribution.` };
   }
@@ -610,10 +618,10 @@ export async function deleteLeadAction(id: string) {
   );
 
   const isProtectedSource =
-    target?.source?.startsWith("Website") || target?.source?.startsWith("Meta");
+    target?.source?.startsWith("Website") || target?.source?.startsWith("Meta") || target?.source?.startsWith("Google Ads");
 
   if (isProtectedSource && !isTestLead) {
-    return { error: "Website and Meta leads can't be deleted, to protect lead-analytics attribution. (Test leads are exempt.)" };
+    return { error: "Website, Meta and Google Ads leads can't be deleted, to protect lead-analytics attribution. (Test leads are exempt.)" };
   }
 
   // Soft-delete the lead and remove its welcome calls (logs cascade).

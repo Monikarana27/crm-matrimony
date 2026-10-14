@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { getLeads, getWebsiteEnquiryCount, getMetaEnquiryCount, getUnseenWebsiteLeadsCount } from "@/actions/leads/lead.actions";
+import { getLeads, getWebsiteEnquiryCount, getMetaEnquiryCount, getGoogleAdsEnquiryCount, getUnseenWebsiteLeadsCount } from "@/actions/leads/lead.actions";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/lib/auth/auth";
 import { DashboardHero } from "@/components/layout/dashboard-hero";
 import { Button } from "@/components/ui/button";
-import { Plus, Globe, Megaphone } from "lucide-react";
+import { Plus, Globe, Megaphone, Search as SearchIcon } from "lucide-react";
 import { LeadsTable } from "./leads-table";
 
 export default async function LeadsPage({
@@ -54,6 +54,7 @@ export default async function LeadsPage({
   });
   const websiteEnquiryCount = canAssign ? await getWebsiteEnquiryCount() : 0;
   const metaEnquiryCount = canAssign ? await getMetaEnquiryCount() : 0;
+  const googleAdsEnquiryCount = canAssign ? await getGoogleAdsEnquiryCount() : 0;
   const unseenWebsiteLeadsCount = canAssign ? await getUnseenWebsiteLeadsCount() : 0;
   const employees = canAssign
     ? await prisma.user.findMany({
@@ -142,6 +143,17 @@ export default async function LeadsPage({
                 {metaEnquiryCount > 0 && (
                   <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
                     {metaEnquiryCount}
+                  </span>
+                )}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="relative">
+              <Link href="/dashboard/admin/leads/google-ads-enquiries">
+                <SearchIcon className="mr-2 h-4 w-4" />
+                Google Ads Enquiries
+                {googleAdsEnquiryCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
+                    {googleAdsEnquiryCount}
                   </span>
                 )}
               </Link>
