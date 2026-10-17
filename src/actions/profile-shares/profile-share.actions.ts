@@ -404,7 +404,7 @@ export async function sendSelectedProfilesAction(
         downloadUrl: shareUrlByProfileId.get(p.id)?.downloadUrl ?? null,
       })),
       {
-        name: sender?.name ?? session.user.name ?? "Elite Bandhan Team",
+        name: sender?.name ?? session.user.name ?? "Cafbyte Team",
         role: getDesignation(sender?.name, sender?.role),
         email: sender?.email ?? undefined,
         phone: sender?.phone ?? undefined,
@@ -482,7 +482,7 @@ export async function notifyProspectAction(profileShareId: string, overrideEmail
       acceptUrl,
       rejectUrl,
       {
-        name: sender?.name ?? session.user.name ?? "Elite Bandhan Team",
+        name: sender?.name ?? session.user.name ?? "Cafbyte Team",
         role: getDesignation(sender?.name, sender?.role),
         email: sender?.email ?? undefined,
         phone: sender?.phone ?? undefined,

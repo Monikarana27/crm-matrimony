@@ -1,15 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import fs from "fs";
-import path from "path";
 
-// Company logo for the header (small 400px copy of public/eb-logo.png).
-// If it can't be read, the header falls back to the "EB" text box.
-let LOGO_DATA: Buffer | null = null;
-try {
-  LOGO_DATA = fs.readFileSync(path.join(process.cwd(), "public", "eb-logo-pdf.png"));
-} catch {
-  LOGO_DATA = null;
-}
 import type { BiodataData } from "./build-biodata-data";
 
 const MAROON = "#6D1B2F";
@@ -116,15 +106,9 @@ function Header({ eyebrow, title }: { eyebrow: string; title?: string }) {
   return (
     <View>
       <View style={styles.header}>
-        <View style={LOGO_DATA ? styles.logoImageBox : styles.logoBox}>
-          {LOGO_DATA ? (
-            <Image src={{ data: LOGO_DATA, format: "png" }} style={styles.logoImage} />
-          ) : (
-            <Text style={styles.logoText}>EB</Text>
-          )}
-        </View>
+        <View style={styles.logoBox}><Text style={styles.logoText}>CB</Text></View>
         <View style={styles.brandCol}>
-          <Text style={styles.brandTitle}>ELITE BANDHAN</Text>
+          <Text style={styles.brandTitle}>CAFBYTE</Text>
           <Text style={styles.brandSubtitle}>{eyebrow}</Text>
         </View>
       </View>
@@ -193,10 +177,10 @@ function ListSection({ title, items, paragraph }: { title: string; items: Item[]
   );
 }
 
-function Footer({ email }: { email: string }) {
+function Footer() {
   return (
     <View style={styles.footer} fixed>
-      <Text style={styles.footerText}>elitebandhan.com   |   {email}   |   +91 9315812799</Text>
+      <Text style={styles.footerText}>Cafbyte CRM   |   cafbyte.com</Text>
       <Text
         style={styles.footerText}
         render={({ pageNumber, totalPages }) => `${String(pageNumber).padStart(2, "0")} / ${String(totalPages).padStart(2, "0")}`}
@@ -293,7 +277,7 @@ export function BiodataDocument({ data }: { data: BiodataData }) {
           <ListSection title="Education & Career" items={educationCareer} />
           <ListSection title="Lifestyle" items={lifestyle} />
         </View>
-        <Footer email="care@elitebandhan.com" />
+        <Footer />
       </Page>
 
       <Page size="A4" style={styles.page}>
@@ -321,13 +305,11 @@ export function BiodataDocument({ data }: { data: BiodataData }) {
               This content may be confidential or privileged. If you have received the said profile from any
               other source, kindly update us, or else it will be treated as our Company's proposal. Also, the
               details provided in the profile are sent by the said party & our firm is not responsible for any
-              misinterpretation regarding the same. You may reach us at: Address: A, 4, LGF, near Vardhman
-              Mall, Sector 19B, Nanda Enclave, Sector 19, Dwarka, Delhi, 110075. Email: Care@elitebandhan.com.
-              Contact number: +91 9315812799.
+              misinterpretation regarding the same. Please contact the sender for questions about this profile.
             </Text>
           </View>
         </View>
-        <Footer email="care@elitebandhan.com" />
+        <Footer />
       </Page>
     </Document>
   );

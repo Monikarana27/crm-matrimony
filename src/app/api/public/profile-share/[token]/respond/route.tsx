@@ -10,7 +10,7 @@ function confirmationPage(message: string, accepted: boolean) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Elite Bandhan</title>
+  <title>Cafbyte</title>
   <style>
     body { font-family: Arial, Helvetica, sans-serif; background: #f4f1ed; margin: 0; padding: 40px 20px; }
     .card { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); overflow: hidden; }
@@ -25,7 +25,7 @@ function confirmationPage(message: string, accepted: boolean) {
 <body>
   <div class="card">
     <div class="bar"></div>
-    <div class="hero"><h1>Elite Bandhan</h1></div>
+    <div class="hero"><h1>Cafbyte</h1></div>
     <div class="body">
       <div class="icon">${accepted ? "✓" : "—"}</div>
       <p>${message}</p>

@@ -67,7 +67,7 @@ export function EmployeeForm({ mode, defaultValues, managerCandidates, action }:
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" defaultValue={defaultValues?.email} placeholder="priya@elitebandhan.com" required />
+              <Input id="email" name="email" type="email" defaultValue={defaultValues?.email} placeholder="employee@example.com" required />
             </div>
 
             <div className="space-y-2">

@@ -18,8 +18,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Elite Bandhan CRM",
-  description: "Matrimonial CRM for Elite Bandhan",
+  title: "Cafbyte CRM",
+  description: "Matrimony operations dashboard by Cafbyte",
 };
 
 export default function RootLayout({

@@ -275,7 +275,7 @@ export default async function ReportPage({ searchParams }: { searchParams: Promi
       </form>
 
       <div className="keep">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Elite Bandhan CRM</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Cafbyte CRM</p>
         <h1 className="text-2xl font-semibold">Lead Report</h1>
         <p className="text-sm text-muted-foreground">
           {rangeText} ({days} day{days === 1 ? "" : "s"}) · {scope === "website" ? "Website leads only" : "All leads"} · Generated {generated} IST

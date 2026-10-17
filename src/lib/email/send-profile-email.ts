@@ -79,7 +79,7 @@ function signatureHtml(sender: EmailSender) {
       <p style="margin: 0; font-size: 14px; color: #333;">Warm regards,</p>
       <p style="margin: 4px 0 0; font-size: 14px; font-weight: 600; color: #2b1b4e;">${sender.name}</p>
       ${sender.role ? `<p style="margin: 0; font-size: 12px; color: #777;">${sender.role}</p>` : ""}
-      <p style="margin: 6px 0 0; font-size: 12px; color: #777;">Elite Bandhan</p>
+      <p style="margin: 6px 0 0; font-size: 12px; color: #777;">Cafbyte</p>
       ${sender.email ? `<p style="margin: 0; font-size: 12px; color: #777;">${sender.email}</p>` : ""}
       ${sender.phone ? `<p style="margin: 0; font-size: 12px; color: #777;">${sender.phone}</p>` : ""}
     </div>
@@ -93,18 +93,18 @@ export async function sendMatchedProfilesEmail(
   sender: EmailSender
 ) {
   const info = await transporter.sendMail({
-    from: `"Elite Bandhan" <${process.env.SMTP_USER}>`,
+    from: `"Cafbyte" <${process.env.SMTP_USER}>`,
     to,
-    cc: "meenakshi@elitebandhan.com",
-    subject: "Weekly matches from elitebandhan.com!",
+
+    subject: "Weekly matches from Cafbyte",
     html: `
       <div style="font-family: Arial, Helvetica, sans-serif; max-width: 620px; margin: 0 auto; background: #f4f1ed; padding: 20px;">
         <div style="background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
           <div style="height: 6px; background: linear-gradient(90deg, #8b1538, #c79b5d, #8b1538);"></div>
           <div style="background: linear-gradient(135deg, #7d102d 0%, #a71c1c 60%, #c79b5d 100%); text-align: center; padding: 32px 25px 28px; color: #ffffff;">
-            <img src="https://www.elitebandhan.com/img/eb-logo.webp" alt="EliteBandhan.Com Logo" style="max-width: 100px; height: 100px; margin-bottom: 15px; background: #fff; border-radius: 20%; padding: 8px;" />
+            
             <h1 style="margin: 0 0 10px; font-size: 26px; font-weight: 700;">Profiles Curated for You</h1>
-            <p style="margin: 0; font-size: 14px; color: #f8e9e9;">Personalised recommendations from EliteBandhan.com</p>
+            <p style="margin: 0; font-size: 14px; color: #f8e9e9;">Personalised recommendations from Cafbyte</p>
           </div>
           <div style="padding: 30px 26px;">
             <p style="font-size: 15px; color: #333; margin: 0 0 14px;">Dear ${clientName || "Valued Member"},</p>
@@ -114,20 +114,16 @@ export async function sendMatchedProfilesEmail(
             <h2 style="font-size: 16px; font-weight: 700; color: #8b1538; margin: 0 0 18px; text-align: center;">Recommended Profiles</h2>
             ${profiles.map(profileCardHtml).join("")}
             <p style="font-size: 14px; color: #555; margin-top: 18px;">
-              We hope these recommendations bring you closer to finding the right match. Thank you for trusting EliteBandhan.com.
+              We hope these recommendations bring you closer to finding the right match. Thank you for trusting Cafbyte.
             </p>
             ${signatureHtml(sender)}
           </div>
           <div style="background: #faf7f3; text-align: center; padding: 22px 20px; border-top: 1px solid #eee7df;">
-            <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;"><strong>EliteBandhan.com</strong></p>
+            <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;"><strong>Cafbyte</strong></p>
             <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;">Premium Matrimonial &amp; Matchmaking Assistance</p>
-            <p style="margin: 6px 0; font-size: 13px;"><a href="https://www.elitebandhan.com" style="color: #8b1538; text-decoration: none; font-weight: 600;">Visit Website</a></p>
+            <p style="margin: 6px 0; font-size: 13px;"><a href="https://cafbyte.com" style="color: #8b1538; text-decoration: none; font-weight: 600;">Visit Website</a></p>
             <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;">Your happiness is our true success.</p>
-            <p style="margin-top: 14px; font-size: 13px; color: #6b6b6b;">
-              For any kind of assistance kindly write us at:
-              <a href="mailto:care@elitebandhan.com" style="color: #8b1538; text-decoration: none; font-weight: 600;">care@elitebandhan.com</a>
-              or call at <strong>+91 9315812799</strong>
-            </p>
+            <p>Please contact the sender for assistance.</p>
           </div>
         </div>
       </div>
@@ -142,13 +138,13 @@ export async function sendMatchedProfilesEmail(
 export async function sendProfileEmail(to: string, profileName: string, profileCode: string, photoUrl: string | null) {
   const photo = toAbsoluteUrl(photoUrl);
   const info = await transporter.sendMail({
-    from: `"Elite Bandhan" <${process.env.SMTP_USER}>`,
+    from: `"Cafbyte" <${process.env.SMTP_USER}>`,
     to,
     subject: `A Compatible Match: ${profileName} (${profileCode})`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
         <div style="background: #2b1b4e; color: white; padding: 20px; text-align: center;">
-          <h2 style="margin: 0;">Elite Bandhan</h2>
+          <h2 style="margin: 0;">Cafbyte</h2>
           <p style="margin: 4px 0 0; opacity: 0.8;">A New Match For You</p>
         </div>
         <div style="padding: 20px;">
@@ -158,7 +154,7 @@ export async function sendProfileEmail(to: string, profileName: string, profileC
           <p>Please contact your relationship manager for more details about this profile.</p>
         </div>
         <div style="background: #f5f5f5; padding: 12px; text-align: center; font-size: 12px; color: #999;">
-          Elite Bandhan &middot; This email was sent on your behalf by our Service team.
+          Cafbyte &middot; This email was sent on your behalf by our Service team.
         </div>
       </div>
     `,
@@ -180,22 +176,22 @@ export async function sendProspectInterestEmail(
   attachment?: { filename: string; content: Buffer }
 ) {
   const info = await transporter.sendMail({
-    from: `"Elite Bandhan" <${process.env.SMTP_USER}>`,
+    from: `"Cafbyte" <${process.env.SMTP_USER}>`,
     to,
-    cc: "meenakshi@elitebandhan.com",
-    subject: `Marriage Proposal from Elite Bandhan — ${clientName}`,
+
+    subject: `Marriage Proposal from Cafbyte — ${clientName}`,
     html: `
       <div style="font-family: Arial, Helvetica, sans-serif; max-width: 620px; margin: 0 auto; background: #f4f1ed; padding: 20px;">
         <div style="background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
           <div style="height: 6px; background: linear-gradient(90deg, #8b1538, #c79b5d, #8b1538);"></div>
           <div style="background: linear-gradient(135deg, #7d102d 0%, #a71c1c 60%, #c79b5d 100%); text-align: center; padding: 32px 25px 28px; color: #ffffff;">
-            <h1 style="margin: 0 0 10px; font-size: 26px; font-weight: 700;">Elite Bandhan</h1>
+            <h1 style="margin: 0 0 10px; font-size: 26px; font-weight: 700;">Cafbyte</h1>
             <p style="margin: 0; font-size: 14px; color: #f8e9e9;">A Marriage Proposal For You</p>
           </div>
           <div style="padding: 30px 26px;">
             <p style="font-size: 15px; color: #333; margin: 0 0 14px;">Dear ${prospectName || "Member"},</p>
             <p style="font-size: 14px; color: #555; margin: 0 0 14px;">
-              I am the Relationship Manager for Elite Bandhan member, <strong>${clientName} (${clientProfileCode})</strong>.
+              I am the Relationship Manager for Cafbyte member, <strong>${clientName} (${clientProfileCode})</strong>.
             </p>
             <p style="font-size: 14px; color: #555; margin: 0 0 22px;">
               We believe our client could be a suitable match for you. If you are interested, we would be happy to take this forward and arrange a meeting at the earliest. Please find their biodata attached for your review.
@@ -214,7 +210,7 @@ export async function sendProspectInterestEmail(
             ${signatureHtml(sender)}
           </div>
           <div style="background: #faf7f3; text-align: center; padding: 22px 20px; border-top: 1px solid #eee7df;">
-            <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;"><strong>Elite Bandhan</strong></p>
+            <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;"><strong>Cafbyte</strong></p>
             <p style="margin: 6px 0; font-size: 13px; color: #6b6b6b;">Premium Matrimonial &amp; Matchmaking Assistance</p>
             <p style="margin: 6px 0; font-size: 13px; color: #999;">This email was sent on behalf of our Service team</p>
           </div>

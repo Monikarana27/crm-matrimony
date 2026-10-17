@@ -42,7 +42,7 @@ export async function Header({ role }: { role: Role }) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
           EB
         </div>
-        <span className="font-semibold tracking-tight">Elite Bandhan CRM</span>
+        <span className="font-semibold tracking-tight">Cafbyte CRM</span>
       </div>
       <CommandPalette role={role} />
       <div className="flex items-center gap-3">

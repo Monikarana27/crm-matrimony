@@ -66,7 +66,7 @@ export function CheckoutCard({ offer }: { offer: Offer }) {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-xl">
       <div className="bg-white px-6 py-8 text-center border-b">
-        <p className="mb-1 text-2xl font-bold text-blue-600">EliteBandhan</p>
+        <p className="mb-1 text-2xl font-bold text-blue-600">Cafbyte</p>
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Special Offer
         </p>

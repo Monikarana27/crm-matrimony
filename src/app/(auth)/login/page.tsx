@@ -19,7 +19,7 @@ export default function LoginPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-sm">
             S
           </div>
-          <h1 className="text-lg font-semibold">Elite Bandhan CRM</h1>
+          <h1 className="text-lg font-semibold">Cafbyte CRM</h1>
           <p className="text-sm text-muted-foreground">
             Sign in to your workspace
           </p>
@@ -35,7 +35,7 @@ export default function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="you@elitebandhan.com"
+                  placeholder="you@example.com"
                   required
                 />
               </div>
@@ -56,7 +56,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Elite Bandhan CRM · Internal Access Only
+          Cafbyte CRM · Internal Access Only
         </p>
       </div>
     </div>
